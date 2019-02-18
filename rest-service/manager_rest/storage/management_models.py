@@ -508,6 +508,10 @@ class Config(SQLModelBase):
     def updated_by(cls):
         return one_to_many_relationship(cls, User, cls._updater_id, 'id')
 
+    @classmethod
+    def unique_id(cls):
+        return 'name'
+
 
 class RabbitMQBroker(SQLModelBase):
     __tablename__ = 'rabbitmq_brokers'
