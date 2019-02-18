@@ -96,7 +96,6 @@ def setup_resources(api):
         'SecretsSetGlobal': 'secrets/<string:key>/set-global',
         'SecretsSetVisibility': 'secrets/<string:key>/set-visibility',
         'ManagerConfig': 'config',
-        'ManagerRestConfig': 'rest/config',
         'Agents': 'agents',
         'AgentsName': 'agents/<string:name>',
         'SummarizeDeployments': 'summary/deployments',

@@ -32,8 +32,9 @@ from .idencoder import get_encoder
 from .relationships import (
     foreign_key,
     many_to_many_relationship,
+    one_to_many_relationship
 )
-from .models_base import db, SQLModelBase, UTCDateTime, CIColumn
+from .models_base import db, SQLModelBase, UTCDateTime, CIColumn, JSONString
 
 
 class ProviderContext(SQLModelBase):
@@ -42,6 +43,46 @@ class ProviderContext(SQLModelBase):
     id = db.Column(db.Text, primary_key=True)
     name = db.Column(db.Text, nullable=False)
     context = db.Column(db.PickleType, nullable=False)
+
+
+class Certificate(SQLModelBase):
+    __tablename__ = 'certificates'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.Text, primary_key=True)
+    value = db.Column(db.Text, nullable=False)
+    updated_at = db.Column(UTCDateTime)
+
+    @declared_attr
+    def _updater_id(cls):
+        return foreign_key(User.id)
+
+    @declared_attr
+    def updated_by(cls):
+        return one_to_many_relationship(cls, User, cls._updater_id, 'id')
+
+
+class Config(SQLModelBase):
+    __tablename__ = 'config'
+
+    name = db.Column(db.Text, primary_key=True)
+    value = db.Column(JSONString, nullable=False)
+    updated_at = db.Column(UTCDateTime)
+
+    @declared_attr
+    def _updater_id(cls):
+        return foreign_key(User.id)
+
+    @declared_attr
+    def updated_by(cls):
+        return one_to_many_relationship(cls, User, cls._updater_id, 'id')
+
+
+class RabbitMQBroker(SQLModelBase):
+    __tablename__ = 'rabbitmq_brokers'
+
+    name = db.Column(db.Text, primary_key=True)
+    params = db.Column(JSONString, nullable=False)
 
 
 class Role(SQLModelBase, RoleMixin):

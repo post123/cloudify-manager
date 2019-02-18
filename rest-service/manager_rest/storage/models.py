@@ -22,7 +22,10 @@ from .management_models import (User,
                                 Tenant,
                                 UserTenantAssoc,
                                 user_datastore,
-                                ProviderContext)
+                                ProviderContext,
+                                Certificate,
+                                Config,
+                                RabbitMQBroker)
 
 from .resource_models import (Blueprint,
                               Snapshot,
