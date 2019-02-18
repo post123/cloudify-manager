@@ -519,5 +519,9 @@ class RabbitMQBroker(SQLModelBase):
     name = db.Column(db.Text, primary_key=True)
     params = db.Column(JSONString, nullable=False)
 
+    @classmethod
+    def unique_id(cls):
+        return 'name'
+
 
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
