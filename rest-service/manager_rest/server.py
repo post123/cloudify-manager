@@ -87,6 +87,10 @@ class CloudifyFlaskApp(Flask):
 
         setup_resources(Api(self))
         self.register_blueprint(app_errors)
+        self.before_first_request(self._load_config)
+
+    def _load_config(self):
+        config.instance.load_from_db(db)
 
     def _set_flask_security(self):
         """Set Flask-Security specific configurations and init the extension

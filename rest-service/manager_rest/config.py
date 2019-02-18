@@ -15,6 +15,7 @@
 
 import os
 import yaml
+import atexit
 
 from json import dump
 
@@ -104,6 +105,22 @@ class Config(object):
                 self.warnings.append(
                     "Ignoring unknown key '{0}' in configuration file "
                     "'{1}'".format(key, filename))
+
+    def load_from_db(self, sm):
+        from manager_rest.storage import models
+        for conf_value in sm.list(models.Config):
+            setattr(self, conf_value.name, conf_value.value)
+        for broker in sm.list(models.RabbitMQBroker):
+            self.amqp_host = broker.params['host']
+            self.amqp_management_host = broker.params['management_host']
+            self.amqp_username = broker.params['username']
+            self.amqp_password = broker.params['password']
+        ca_cert = sm.list(models.Certificate, filters={'name': 'ca'})[0]
+        with tempfile.NamedTemporaryFile(delete=False, mode='wb') as f:
+            f.write(ca_cert.value)
+        self.amqp_ca_path = f.name
+        self.ca_cert_path = f.name
+        atexit.register(os.unlink, f.name)
 
     def to_dict(self):
         config_dict = vars(self)
