@@ -15,9 +15,8 @@
 
 from datetime import datetime
 
-from manager_rest import rest_utils
 from manager_rest import manager_exceptions
-from manager_rest.rest import rest_decorators
+from manager_rest.rest import rest_decorators, rest_utils
 from manager_rest.security import SecuredResource
 from manager_rest.security.authorization import authorize
 from manager_rest.storage import get_storage_manager, models
