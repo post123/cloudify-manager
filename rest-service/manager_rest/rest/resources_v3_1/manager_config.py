@@ -15,7 +15,6 @@
 
 from datetime import datetime
 
-from manager_rest import manager_exceptions
 from manager_rest.rest import rest_decorators, rest_utils
 from manager_rest.security import SecuredResource
 from manager_rest.security.authorization import authorize
@@ -43,8 +42,8 @@ class ManagerConfig(SecuredResource):
         name = data['name']
         value = data['value']
         try:
-            inst = sm.get(models.Config, name)
-        except manager_exceptions.NotFoundError:
+            inst = sm.list(models.Config, {'name': name})[0]
+        except IndexError:
             inst = models.Config(name=name, value=value)
         sm.update(inst)
         inst.updated_at = datetime.now()
