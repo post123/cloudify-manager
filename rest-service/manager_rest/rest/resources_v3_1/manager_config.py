@@ -36,8 +36,8 @@ class ManagerConfig(SecuredResource):
     def put(self):
         sm = get_storage_manager()
         data = rest_utils.get_json_and_verify_params({
-            'name': {'type': 'unicode'},
-            'value': {'type': 'unicode'},
+            'name': {'type': unicode},
+            'value': {},
         })
         name = data['name']
         value = data['value']
