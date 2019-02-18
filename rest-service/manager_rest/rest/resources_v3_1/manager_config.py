@@ -14,6 +14,7 @@
 #  * limitations under the License.
 
 from datetime import datetime
+from flask_security import current_user
 
 from manager_rest.rest import rest_decorators, rest_utils
 from manager_rest.security import SecuredResource
@@ -45,6 +46,8 @@ class ManagerConfig(SecuredResource):
             inst = sm.list(models.Config, {'name': name})[0]
         except IndexError:
             inst = models.Config(name=name, value=value)
-        sm.update(inst)
+
         inst.updated_at = datetime.now()
+        inst.updated_by = current_user
+        sm.update(inst)
         return inst.to_dict()
