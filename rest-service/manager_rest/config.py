@@ -16,6 +16,7 @@
 import os
 import yaml
 import atexit
+import tempfile
 
 from json import dump
 
@@ -106,8 +107,9 @@ class Config(object):
                     "Ignoring unknown key '{0}' in configuration file "
                     "'{1}'".format(key, filename))
 
-    def load_from_db(self, sm):
-        from manager_rest.storage import models
+    def load_from_db(self):
+        from manager_rest.storage import models, get_storage_manager
+        sm = get_storage_manager()
         for conf_value in sm.list(models.Config):
             setattr(self, conf_value.name, conf_value.value)
         for broker in sm.list(models.RabbitMQBroker):
