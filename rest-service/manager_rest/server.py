@@ -65,7 +65,7 @@ class CloudifyFlaskApp(Flask):
         self._set_sql_alchemy()
         if load_config:
             with self.app_context():
-                config.instance.load_from_db(db)
+                config.instance.load_from_db()
 
         # These two need to be called after the configuration was loaded
         setup_logger(self.logger)
