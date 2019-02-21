@@ -43,10 +43,10 @@ class ManagerConfig(SecuredResource):
         name = data['name']
         value = data['value']
         try:
-            inst = sm.list(models.Config, {'name': name})[0]
+            inst = sm.list(models.Config, {'name': name}).items[0]
         except IndexError:
             inst = models.Config(name=name, value=value)
-
+        inst.value = value
         inst.updated_at = datetime.now()
         inst.updated_by = current_user
         sm.update(inst)
