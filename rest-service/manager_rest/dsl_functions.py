@@ -99,6 +99,10 @@ def _get_methods(deployment_id, storage_manager):
     def get_node(node_id):
         return get_storage_node(deployment_id, node_id)
 
+    def get_input(input_name):
+        deployment = storage_manager.get(Deployment, deployment_id)
+        return deployment.inputs[input_name]
+
     def get_secret(secret_key):
         secret = storage_manager.get(Secret, secret_key)
         decrypted_value = cryptography_utils.decrypt(secret.value)
@@ -143,5 +147,6 @@ def _get_methods(deployment_id, storage_manager):
         get_node_instance_method=get_node_instance,
         get_node_method=get_node,
         get_secret_method=get_secret,
-        get_capability_method=get_capability
+        get_capability_method=get_capability,
+        get_input_method=get_input
     )
