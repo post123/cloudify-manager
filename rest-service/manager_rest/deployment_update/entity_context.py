@@ -5,7 +5,7 @@ from constants import ENTITY_TYPES
 from manager_rest.storage import get_storage_manager, models, get_node
 
 
-def get_entity_context(plan, deployment_id, entity_type, entity_id):
+def get_entity_context(dep_update, entity_type, entity_id):
     entity_context_by_type = {
         ENTITY_TYPES.NODE: NodeContext,
         ENTITY_TYPES.RELATIONSHIP: RelationshipContext,
@@ -17,15 +17,15 @@ def get_entity_context(plan, deployment_id, entity_type, entity_id):
         ENTITY_TYPES.PLUGIN: PluginContext
     }
     context = entity_context_by_type[entity_type]
-    return context(plan, deployment_id, *utils.get_entity_keys(entity_id))
+    return context(dep_update, *utils.get_entity_keys(entity_id))
 
 
-def _operation_context(plan, deployment_id, *entity_keys):
+def _operation_context(dep_update, *entity_keys):
     if entity_keys[2] == utils.pluralize(ENTITY_TYPES.RELATIONSHIP):
         entity_context = RelationshipInterfaceOperationContext
     else:
         entity_context = NodeInterfaceOperationContext
-    return entity_context(plan, deployment_id, *entity_keys)
+    return entity_context(dep_update, *entity_keys)
 
 
 class EntityContextBase(object):
@@ -38,12 +38,13 @@ class EntityContextBase(object):
     PLUGINS = utils.pluralize(ENTITY_TYPES.PLUGIN)
     DESCRIPTION = 'description'
 
-    def __init__(self, plan, deployment_id, entity_type, top_level_entity_id):
+    def __init__(self, dep_update, entity_type, top_level_entity_id):
         self.sm = get_storage_manager()
-        self._deployment_id = deployment_id
         self._entity_type = entity_type
         self._top_level_entity_id = top_level_entity_id
-        self._plan = plan
+        self._dep_update = dep_update
+        self._plan = dep_update.deployment_plan
+        self._deployment_id = dep_update.deployment_id
 
     @property
     def deployment_plan(self):
@@ -52,6 +53,10 @@ class EntityContextBase(object):
     @property
     def entity_type(self):
         return self._entity_type
+
+    @property
+    def deployment_update(self):
+        return self._dep_update
 
     @property
     def deployment_id(self):
@@ -71,9 +76,8 @@ class EntityContextBase(object):
 
 
 class NodeContextBase(EntityContextBase):
-    def __init__(self, plan, deployment_id, entity_type, top_level_entity_id):
-        super(NodeContextBase, self).__init__(plan,
-                                              deployment_id,
+    def __init__(self, dep_update, entity_type, top_level_entity_id):
+        super(NodeContextBase, self).__init__(dep_update,
                                               entity_type,
                                               top_level_entity_id)
         self._raw_super_entity = utils.get_raw_node(self.deployment_plan,
@@ -106,13 +110,11 @@ class NodeContextBase(EntityContextBase):
 
 class NodeContext(NodeContextBase):
     def __init__(self,
-                 plan,
-                 deployment_id,
+                 dep_update,
                  nodes_key,
                  top_level_entity_id,
                  *modification_breadcrumbs):
-        super(NodeContext, self).__init__(plan,
-                                          deployment_id,
+        super(NodeContext, self).__init__(dep_update,
                                           ENTITY_TYPES.NODE,
                                           top_level_entity_id)
         entity_keys = [nodes_key, top_level_entity_id]
@@ -134,15 +136,13 @@ class NodeContext(NodeContextBase):
 
 class RelationshipContext(NodeContextBase):
     def __init__(self,
-                 plan,
-                 deployment_id,
+                 dep_update,
                  nodes_key,
                  top_level_entity_id,
                  relationships_key,
                  relationship_index,
                  *modification_breadcrumbs):
-        super(RelationshipContext, self).__init__(plan,
-                                                  deployment_id,
+        super(RelationshipContext, self).__init__(dep_update,
                                                   ENTITY_TYPES.RELATIONSHIP,
                                                   top_level_entity_id)
         self._relationship_index = utils.parse_index(relationship_index)
@@ -198,15 +198,13 @@ class RelationshipContext(NodeContextBase):
 
 class PropertyContext(NodeContextBase):
     def __init__(self,
-                 plan,
-                 deployment_id,
+                 dep_update,
                  nodes_key,
                  top_level_entity_id,
                  properties_key,
                  property_id,
                  *modification_breadcrumbs):
-        super(PropertyContext, self).__init__(plan,
-                                              deployment_id,
+        super(PropertyContext, self).__init__(dep_update,
                                               ENTITY_TYPES.PROPERTY,
                                               top_level_entity_id)
         self._property_id = property_id
@@ -251,16 +249,14 @@ class PropertyContext(NodeContextBase):
 
 class NodeInterfaceOperationContext(NodeContextBase):
     def __init__(self,
-                 plan,
-                 deployment_id,
+                 dep_update,
                  nodes_key,
                  top_level_entity_id,
                  operations_key,
                  operation_id,
                  *modification_breadcrumbs):
         super(NodeInterfaceOperationContext, self).__init__(
-                plan,
-                deployment_id,
+                dep_update,
                 ENTITY_TYPES.OPERATION,
                 top_level_entity_id)
         self._operation_id = operation_id
@@ -302,15 +298,13 @@ class NodeInterfaceOperationContext(NodeContextBase):
 
 class PluginContext(NodeContextBase):
     def __init__(self,
-                 plan,
-                 deployment_id,
+                 dep_update,
                  plugin_key,
                  node_id,
                  plugin_name,
                  *modification_breadcrumbs):
         super(PluginContext, self).__init__(
-                plan,
-                deployment_id,
+                dep_update,
                 ENTITY_TYPES.PLUGIN,
                 node_id)
         self._plugin_key = plugin_key
@@ -371,8 +365,7 @@ class PluginContext(NodeContextBase):
 
 class RelationshipInterfaceOperationContext(NodeContextBase):
     def __init__(self,
-                 plan,
-                 deployment_id,
+                 dep_update,
                  nodes_key,
                  top_level_entity_id,
                  relatonships_key,
@@ -381,8 +374,7 @@ class RelationshipInterfaceOperationContext(NodeContextBase):
                  operation_id,
                  *modification_breadcrumbs):
         super(RelationshipInterfaceOperationContext, self).__init__(
-            plan,
-            deployment_id,
+            dep_update,
             ENTITY_TYPES.OPERATION,
             top_level_entity_id)
         self._relationships_index = utils.parse_index(relationship_index)
@@ -478,13 +470,11 @@ class DeploymentContextBase(EntityContextBase):
 
 class WorkflowContext(DeploymentContextBase):
     def __init__(self,
-                 plan,
-                 deployment_id,
+                 dep_update,
                  workflows_key,
                  top_level_entity_id,
                  *modification_breadcrumbs):
-        super(WorkflowContext, self).__init__(plan,
-                                              deployment_id,
+        super(WorkflowContext, self).__init__(dep_update,
                                               ENTITY_TYPES.WORKFLOW,
                                               top_level_entity_id)
         self._modification_breadcrumbs = modification_breadcrumbs
@@ -524,11 +514,9 @@ class WorkflowContext(DeploymentContextBase):
 
 class DescriptionContext(DeploymentContextBase):
     def __init__(self,
-                 plan,
-                 deployment_id,
+                 dep_update,
                  description_key):
-        super(DescriptionContext, self).__init__(plan,
-                                                 deployment_id,
+        super(DescriptionContext, self).__init__(dep_update,
                                                  ENTITY_TYPES.DESCRIPTION,
                                                  description_key)
 
@@ -556,13 +544,11 @@ class DescriptionContext(DeploymentContextBase):
 
 class OutputContext(DeploymentContextBase):
     def __init__(self,
-                 plan,
-                 deployment_id,
+                 dep_update,
                  workflows_key,
                  top_level_entity_id,
                  *modification_breadcrumbs):
-        super(OutputContext, self).__init__(plan,
-                                            deployment_id,
+        super(OutputContext, self).__init__(dep_update,
                                             ENTITY_TYPES.OUTPUT,
                                             top_level_entity_id)
         self._modification_breadcrumbs = modification_breadcrumbs

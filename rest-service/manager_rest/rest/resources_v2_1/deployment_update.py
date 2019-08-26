@@ -18,6 +18,7 @@ from shutil import copytree, rmtree
 
 from flask import request
 from flask_restful_swagger import swagger
+from werkzeug.datastructures import MultiDict
 
 from manager_rest.security import SecuredResource
 from manager_rest import manager_exceptions, config
@@ -83,10 +84,10 @@ class DeploymentUpdate(SecuredResource):
         Note: the blueprint id of the deployment will be updated to the given
         blueprint id.
         """
-        request_json = request.json
+        request_json = MultiDict(request.json)
         manager, skip_install, skip_uninstall, skip_reinstall, workflow_id, \
-            ignore_failure, install_first = self._get_params_and_validate(
-                id, request_json)
+            ignore_failure, install_first, runtime_eval, update_executions = \
+            self._get_params_and_validate(id, request_json)
         blueprint, inputs, reinstall_list = \
             self._get_and_validate_blueprint_and_inputs(id, request_json)
 
@@ -101,11 +102,10 @@ class DeploymentUpdate(SecuredResource):
         rmtree(dep_dir_abs, ignore_errors=True)
         copytree(blueprint_dir_abs, dep_dir_abs)
         file_name = blueprint.main_file_name
-        deployment_update = manager.stage_deployment_update(id,
-                                                            deployment_dir,
-                                                            file_name,
-                                                            inputs,
-                                                            blueprint.id)
+        deployment_update = manager.stage_deployment_update(
+            id, deployment_dir, file_name, inputs, blueprint.id,
+            runtime_only_evaluation=runtime_eval,
+            update_executions=update_executions)
         manager.extract_steps_from_deployment_update(deployment_update)
         return manager.commit_deployment_update(deployment_update,
                                                 skip_install,
@@ -119,11 +119,15 @@ class DeploymentUpdate(SecuredResource):
     def _commit(self, deployment_id):
         request_json = request.args
         manager, skip_install, skip_uninstall, skip_reinstall, workflow_id, \
-            ignore_failure, install_first = self._get_params_and_validate(
+            ignore_failure, install_first, runtime_eval, update_executions = \
+            self._get_params_and_validate(
                 deployment_id, request_json, preserve_old_behavior=True)
+
         deployment_update, _ = \
             UploadedBlueprintsDeploymentUpdateManager(). \
-            receive_uploaded_data(deployment_id)
+            receive_uploaded_data(
+                deployment_id, runtime_only_evaluation=runtime_eval,
+                update_executions=update_executions)
         manager.extract_steps_from_deployment_update(deployment_update)
         return manager.commit_deployment_update(deployment_update,
                                                 skip_install,
@@ -176,6 +180,11 @@ class DeploymentUpdate(SecuredResource):
             'install_first', request_json.get('install_first',
                                               preserve_old_behavior))
         workflow_id = request_json.get('workflow_id', None)
+        runtime_only_evaluation = verify_and_convert_bool(
+            'runtime_only_evaluation',
+            request_json.get('runtime_only_evaluation', 'false')
+        )
+        update_executions = request_json.getlist('update_executions')
         manager.validate_no_active_updates_per_deployment(deployment_id,
                                                           force=force)
         return (manager,
@@ -184,7 +193,9 @@ class DeploymentUpdate(SecuredResource):
                 skip_reinstall,
                 workflow_id,
                 ignore_failure,
-                install_first)
+                install_first,
+                runtime_only_evaluation,
+                update_executions)
 
 
 class DeploymentUpdateId(SecuredResource):
