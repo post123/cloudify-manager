@@ -5,6 +5,7 @@ After=cloudify-rabbitmq.service
 
 [Service]
 TimeoutStartSec=0
+RestartSec=3
 Restart=on-failure
 User=cfyuser
 Group=cfyuser
