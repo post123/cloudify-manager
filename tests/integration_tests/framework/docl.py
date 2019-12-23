@@ -227,7 +227,7 @@ def _set_container_id_and_ip(container_details):
     default_container_id = container_details['id']
     os.environ[constants.DOCL_CONTAINER_IP] = container_details['ip']
     os.environ['DOCL_CONTAINER_ID'] = default_container_id
-    _save_docl_container_details(container_details)
+    # _save_docl_container_details(container_details)
 
 
 def _retry(func, exceptions, cleanup=None):

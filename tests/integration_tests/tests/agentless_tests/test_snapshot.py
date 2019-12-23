@@ -193,6 +193,7 @@ class TestSnapshot(AgentlessTestCase):
         Validate the restore of new DB fields added in 5.0 or 5.0.5 which
         relate to deployments and executions
         """
+        import pudb; pu.db
         snapshot_path = self._get_snapshot('snap_5.0.5_with_executions.zip')
         self._upload_and_restore_snapshot(snapshot_path)
         deployments = postgresql.run_query(
