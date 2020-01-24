@@ -104,7 +104,7 @@ class BaseTestEnvironment(object):
         self.chown(constants.CLOUDIFY_USER, constants.PLUGIN_STORAGE_DIR)
         self.start_events_printer()
 
-    def build_resource_mapping(self):
+    def _build_resource_mapping(self):
         """
         This function builds a list of resources to mount on the manager
         container. Each entry is composed of the source directory on the host
