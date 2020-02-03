@@ -139,7 +139,7 @@ class TestResumeMgmtworker(AgentlessTestCase):
         self._unlock_operation('interface1.op_resumable', node_ids=['node1'])
 
         task = self._find_remote_operation(graphs[0].id)
-        self.assertEqual(task.state, tasks.TASK_SUCCEEDED)
+        self.assertEqual(task.state, tasks.TASK_RESPONSE_SENT)
 
     def test_resumable_mgmtworker_op(self):
         # start a workflow, stop mgmtworker, restart mgmtworker, check that
@@ -263,7 +263,6 @@ class TestResumeMgmtworker(AgentlessTestCase):
             client.node_instances.get(instance2.id).runtime_properties)
         self.assertEqual(client.node_instances.get(instance.id)
                          .runtime_properties['count'], 2)
-
         client.executions.resume(execution.id, force=True)
         execution = self.wait_for_execution_to_end(execution, client=client)
         self.assertEqual(execution.status, 'terminated')
@@ -288,7 +287,7 @@ class TestResumeMgmtworker(AgentlessTestCase):
         self.assertEqual(execution.status, 'cancelled')
 
         self._unlock_operation('interface1.op_resumable')
-        execution = self.client.executions.resume(execution.id)
+        execution = self.client.executions.resume(execution.id, force=True)
         execution = self.wait_for_execution_to_end(execution)
         self.assertEqual(execution.status, 'terminated')
 
@@ -311,7 +310,8 @@ class TestResumeMgmtworker(AgentlessTestCase):
         self.assertEqual(execution.status, 'cancelled')
 
         self._unlock_operation('interface1.op_nonresumable')
-        execution = self.client.executions.resume(execution.id)
+        execution = self.client.executions.resume(execution.id, force=True)
+        time.sleep(10)
         self.assertRaises(RuntimeError,
                           self.wait_for_execution_to_end, execution)
 
