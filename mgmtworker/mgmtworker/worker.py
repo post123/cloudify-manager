@@ -20,7 +20,6 @@ import logging
 import argparse
 
 from cloudify import broker_config, dispatch
-from cloudify.logs import setup_agent_logger
 from cloudify.utils import get_admin_api_token
 from cloudify.constants import MGMTWORKER_QUEUE
 from cloudify.manager import get_rest_client
@@ -36,7 +35,7 @@ logger = logging.getLogger('mgmtworker')
 
 class CloudifyWorkflowConsumer(TaskConsumer):
     routing_key = 'workflow'
-    handler = dispatch.WorkflowHandler
+    handler = dispatch.AsyncWorkflowHandler()
     late_ack = True
 
     def _print_task(self, ctx, action, status=None):
@@ -134,7 +133,9 @@ def main():
     parser.add_argument('--cluster-service-queue')
     args = parser.parse_args()
 
-    setup_agent_logger('mgmtworker')
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger('pika').setLevel(logging.WARNING)
+    logging.getLogger('cloudify.rest_client.http').setLevel(logging.INFO)
 
     prepare_broker_config()
     worker = make_amqp_worker(args)
