@@ -120,6 +120,12 @@ def prepare_broker_config():
 
 
 def main():
+    os.environ.update({
+        'REST_HOST': '127.0.0.1',
+        'REST_PORT': '53333',
+        'LOCAL_REST_CERT_FILE': '/etc/cloudify/ssl/cloudify_internal_ca_cert.pem',  # NOQA
+        'AGENT_WORK_DIR': '/opt/mgmtworker/work'
+    })
     parser = argparse.ArgumentParser()
     parser.add_argument('--queue', default=MGMTWORKER_QUEUE)
     parser.add_argument('--max-workers', default=DEFAULT_MAX_WORKERS, type=int)
