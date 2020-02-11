@@ -37,7 +37,7 @@ logger = logging.getLogger('mgmtworker')
 class CloudifyWorkflowConsumer(TaskConsumer):
     routing_key = 'workflow'
     handler = dispatch.WorkflowHandler
-    late_ack = 'never'
+    late_ack = True
 
     def _print_task(self, ctx, action, status=None):
         if ctx['type'] in ['workflow', 'hook']:
