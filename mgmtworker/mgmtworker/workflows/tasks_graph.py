@@ -249,6 +249,7 @@ class TaskDependencyGraph(object):
                 aws,
                 return_when=asyncio.FIRST_COMPLETED
             )
+            logger.info('post-aws')
             next_step = set()
             for finished_task in done:
                 logger.info('finished: %s', finished_task)
