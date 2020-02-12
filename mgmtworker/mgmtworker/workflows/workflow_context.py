@@ -71,6 +71,7 @@ except ImportError:
 
 DEFAULT_LOCAL_TASK_THREAD_POOL_SIZE = 1
 
+logger = logging.getLogger()
 
 class CloudifyWorkflowRelationshipInstance(object):
     """
@@ -913,6 +914,7 @@ class WorkflowNodesAndInstancesContainer(object):
             f'nodes?deployment_id={self.deployment.id}&_get_all_results=True&evaluate_functions=True',  # NOQA
         )
         nodes_json = await nodes_response.json()
+        logger.info('nodes: %s', nodes_json)
         raw_nodes = [Node(item) for item in nodes_json['items']]
         instances_response = await self.rest_client.request(
             'GET',
