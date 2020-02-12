@@ -911,7 +911,7 @@ class WorkflowNodesAndInstancesContainer(object):
     async def prepare(self):
         nodes_response = await self.rest_client.request(
             'GET',
-            f'nodes?deployment_id={self.deployment.id}&_get_all_results=True&evaluate_functions=True',  # NOQA
+            f'nodes?deployment_id={self.deployment.id}&_get_all_results=True&_evaluate_functions=True',  # NOQA
         )
         nodes_json = await nodes_response.json()
         logger.info('nodes: %s', nodes_json)
