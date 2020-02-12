@@ -37,7 +37,7 @@ async def main(loop):
         channel = await connection.channel()
         queue = await channel.declare_queue(
             queue_name,
-            auto_delete=True
+            durable=True
         )
         await channel.declare_exchange(
             name='cloudify.management'
