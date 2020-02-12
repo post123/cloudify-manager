@@ -40,7 +40,8 @@ async def main(loop):
             durable=True
         )
         await channel.declare_exchange(
-            name='cloudify.management'
+            name='cloudify.management',
+            durable=True
         )
         await queue.bind('cloudify.management', routing_key='workflow')
         queue.consume(handle_message, no_ack=True)
