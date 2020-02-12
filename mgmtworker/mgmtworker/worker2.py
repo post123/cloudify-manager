@@ -31,7 +31,7 @@ class Worker:
         self._session = None
         self._events_exchange = None
         self.channel = None
-
+`
     async def handle_message(self, message):
         data = json.loads(message.body)
         task = data['cloudify_task']
@@ -116,6 +116,7 @@ class Worker:
 
 
 if __name__ == "__main__":
+    os.environ['AGENT_WORK_DIR'] = '/opt/mgmtworker/work'
     logging.basicConfig(level=logging.INFO)
     loop = asyncio.get_event_loop()
     worker = Worker(loop)
