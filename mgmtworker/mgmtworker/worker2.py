@@ -32,7 +32,6 @@ class Worker:
 
     async def handle_message(self, message):
         data = json.loads(message.body)
-        logging.info('hello %s, %s', message, data)
         task = data['cloudify_task']
         ctx = task['kwargs'].pop('__cloudify_context')
         args = task.get('args', [])
@@ -44,6 +43,7 @@ class Worker:
         try:
             func(wctx, **kwargs)
         except Exception:
+            logger.exception('failed')
             await wctx.rest_client.request(
                 'PATCH',
                 f'executions/{wctx.execution_id}',
