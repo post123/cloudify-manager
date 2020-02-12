@@ -48,18 +48,28 @@ class Worker:
         )
         try:
             await func(wctx, **kwargs)
-        except Exception:
+        except Exception as e:
             logger.exception('failed')
             await wctx.rest_client.request(
                 'PATCH',
                 f'executions/{wctx.execution_id}',
                 json={'status': 'failed'}
             )
+            wctx.internal.send_workflow_event(
+                event_type='workflow_failed',
+                message="'{0}' workflow execution failed: {1}".format(
+                    wctx.workflow_id, str(e))
+            )
         else:
             await wctx.rest_client.request(
                 'PATCH',
                 f'executions/{wctx.execution_id}',
                 json={'status': 'terminated'}
+            )
+            wctx.internal.send_workflow_event(
+                event_type='workflow_succeeded',
+                message="'{0}' workflow execution succeeded".format(
+                    wctx.workflow_id),
             )
         logging.info('wctx %s func %s', wctx, func)
 
