@@ -40,7 +40,7 @@ class Worker:
         ctx['worker'] = self
         wctx = workflow_context.CloudifyWorkflowContext(ctx)
         await wctx.prepare()
-        func = utils.get_func(wctx['task_name'])
+        func = utils.get_func(ctx['task_name'])
         logging.info('wctx %s func %s', wctx, func)
 
     @property
