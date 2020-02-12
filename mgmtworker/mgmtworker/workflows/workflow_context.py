@@ -58,6 +58,8 @@ from cloudify.logs import (CloudifyWorkflowLoggingHandler,
                            send_sys_wide_wf_event)
 
 from cloudify.utils import is_agent_alive
+from cloudify_rest_client.nodes import Node
+from cloudify_rest_client.node_instances import NodeInstance
 
 
 try:
@@ -903,7 +905,19 @@ class _WorkflowContextBase(object):
 
 class WorkflowNodesAndInstancesContainer(object):
 
-    def __init__(self, workflow_context, raw_nodes, raw_node_instances):
+    async def prepare(self):
+        await super(WorkflowNodesAndInstancesContainer, self).prepare()
+        raw_nodes = self.rest_client.request(
+            'GET',
+            f'/nodes?deployment_id={self.deployment.id}&_get_all_results=True&evaluate_functions=True',  # NOQA
+        )
+        raw_nodes = [Node(item) for item in raw_nodes['items']]
+        raw_node_instances = self.rest_client.request(
+            'GET',
+            f'/node-instances?deployment_id={self.deployment.id}&_get_all_results=True',
+        )
+        raw_node_instances = [NodeInstance(['item'])
+                              for item in raw_node_instances]
         self._nodes = dict(
             (node.id, CloudifyWorkflowNode(workflow_context, node, self))
             for node in raw_nodes)
@@ -919,7 +933,7 @@ class WorkflowNodesAndInstancesContainer(object):
                 if rel.relationship.is_derived_from(
                         "cloudify.relationships.contained_in"):
                     rel.target_node_instance._add_contained_node_instance(inst)
-
+        
     @property
     def nodes(self):
         return iter(self._nodes.values())
@@ -990,18 +1004,6 @@ class CloudifyWorkflowContext(
                 storage = self.internal.handler.storage
                 raw_nodes = storage.get_nodes()
                 raw_node_instances = storage.get_node_instances()
-            else:
-                rest = get_rest_client()
-                raw_nodes = rest.nodes.list(
-                    deployment_id=self.deployment.id,
-                    _get_all_results=True,
-                    evaluate_functions=self.deployment.runtime_only_evaluation)
-                raw_node_instances = rest.node_instances.list(
-                    deployment_id=self.deployment.id,
-                    _get_all_results=True)
-
-            WorkflowNodesAndInstancesContainer.__init__(self, self, raw_nodes,
-                                                        raw_node_instances)
 
     def _build_cloudify_context(self, *args):
         context = super(
