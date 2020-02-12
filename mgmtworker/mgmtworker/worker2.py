@@ -11,7 +11,7 @@ from mgmtworker.workflows import workflow_context
 logger = logging.getLogger()
 
 
-def get_conn_kwargs():
+def get_conn_kwargs(vhost='/'):
     with open('/opt/mgmtworker/work/broker_config.json') as f:
         broker_config = json.load(f)
     return {
@@ -23,6 +23,7 @@ def get_conn_kwargs():
         },
         'login': broker_config['broker_username'],
         'password': broker_config['broker_password'],
+        'vhost': vhost
     }
 
 
@@ -32,6 +33,20 @@ class Worker:
         self._session = None
         self._events_exchange = None
         self.channel = None
+        self._connections = {}
+        self._channels = {}
+
+    async def get_channel(self, vhost):
+        if vhost in self._channels:
+            return self._channels[vhost]
+        connection = await aio_pika.connect_robust(
+            loop=self._loop,
+            **get_conn_kwargs(vhost)
+        )
+        channel = await connection.channel()
+        self._connections[vhost] = connection
+        self._channels[vhost] = channel
+        return channel
 
     async def handle_message(self, message):
         data = json.loads(message.body)
@@ -88,32 +103,31 @@ class Worker:
             **get_conn_kwargs()
         )
 
-        async with connection:
-            queue_name = "cloudify.management_workflow"
+        queue_name = "cloudify.management_workflow"
 
-            channel = await connection.channel()
-            self.channel = channel
-            queue = await channel.declare_queue(
-                queue_name,
-                durable=True
-            )
-            await channel.declare_exchange(
-                name='cloudify.management',
-                durable=True
-            )
-            self._events_exchange = await channel.declare_exchange(
-                name='cloudify-events-topic',
-                durable=True,
-                type='topic'
-            )
-            self._events_exchange = await channel.declare_exchange(
-                name='cloudify-events-topic',
-                durable=True,
-                type='topic'
-            )
-            await queue.bind('cloudify.management', routing_key='workflow')
-            await queue.consume(self.handle_message, no_ack=True)
-            await finished.wait()
+        channel = await self.get_channel('/')
+        self.channel = channel
+        queue = await channel.declare_queue(
+            queue_name,
+            durable=True
+        )
+        await channel.declare_exchange(
+            name='cloudify.management',
+            durable=True
+        )
+        self._events_exchange = await channel.declare_exchange(
+            name='cloudify-events-topic',
+            durable=True,
+            type='topic'
+        )
+        self._events_exchange = await channel.declare_exchange(
+            name='cloudify-events-topic',
+            durable=True,
+            type='topic'
+        )
+        await queue.bind('cloudify.management', routing_key='workflow')
+        await queue.consume(self.handle_message, no_ack=True)
+        await finished.wait()
 
 
 if __name__ == "__main__":
