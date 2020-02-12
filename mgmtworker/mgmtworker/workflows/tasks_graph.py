@@ -49,6 +49,20 @@ def make_or_get_graph(f):
     return _inner
 
 
+class RootTask:
+    def apply_async(self):
+        async def _wait():
+            return self
+        return _wait()
+
+
+class GraphItem:
+    def __init__(self, data):
+        self.data = data
+        self.parents = set()
+        self.children = set()
+
+
 class TaskDependencyGraph(object):
     """
     A task graph builder
@@ -105,6 +119,8 @@ class TaskDependencyGraph(object):
         self._error = None
         self._stored = False
         self.id = graph_id
+        self._root = GraphItem(RootTask())
+        self._tasks = {None: self._root}
 
     def store(self, name):
         serialized_tasks = []
@@ -124,7 +140,8 @@ class TaskDependencyGraph(object):
 
         :param task: The task
         """
-        self.graph.add_node(task.id, task=task)
+        self._tasks[task.id] = GraphItem(task)
+        self.add_dependency(task, None)
 
     def get_task(self, task_id):
         """Get a task instance that was inserted to this graph by its id
@@ -133,8 +150,7 @@ class TaskDependencyGraph(object):
         :return: a WorkflowTask instance for the requested task if found.
                  None, otherwise.
         """
-        data = self.graph.node.get(task_id)
-        return data['task'] if data is not None else None
+        return self._tasks[task_id].data
 
     def remove_task(self, task):
         """Remove the provided task from the graph
@@ -144,8 +160,12 @@ class TaskDependencyGraph(object):
         if task.is_subgraph:
             for subgraph_task in task.tasks.values():
                 self.remove_task(subgraph_task)
-        if task.id in self.graph:
-            self.graph.remove_node(task.id)
+        if task.id in self._tasks:
+            graph_item = self._tasks.pop(task.id)
+            for child in graph_item.children:
+                child.parents.remove(graph_item)
+            for parent in graph_item.parents:
+                parent.children.remove(graph_item)
 
     # src depends on dst
     def add_dependency(self, src_task, dst_task):
@@ -158,13 +178,19 @@ class TaskDependencyGraph(object):
         :param src_task: The source task
         :param dst_task: The target task
         """
-        if not self.graph.has_node(src_task.id):
+
+        if src_task.id not in self._tasks:
             raise RuntimeError('source task {0} is not in graph (task id: '
                                '{1})'.format(src_task, src_task.id))
-        if not self.graph.has_node(dst_task.id):
+        if dst_task.id not in self._tasks:
             raise RuntimeError('destination task {0} is not in graph (task '
                                'id: {1})'.format(dst_task, dst_task.id))
-        self.graph.add_edge(src_task.id, dst_task.id)
+        src_item = self._tasks[src_task.id]
+        if dst_task is not None and self._root in src_item.parents:
+            src_item.parents.remove(self._root)
+        dst_item = self._tasks[dst_task.id]
+        src_item.parents.add(dst_item)
+        dst_item.children.add(src_item)
 
     def sequence(self):
         """
@@ -178,7 +204,7 @@ class TaskDependencyGraph(object):
         self.add_task(task)
         return task
 
-    def execute(self):
+    async def execute(self):
         """
         Start executing the graph based on tasks and dependencies between
         them.\
@@ -200,52 +226,19 @@ class TaskDependencyGraph(object):
         """
         # clear error, in case the tasks graph has been reused
         self._error = None
-        logger.warning('hello')
-        return
-        while self._error is None:
-
-            if self._is_execution_cancelled():
-                raise api.ExecutionCancelled()
-
-            # handle all terminated tasks
-            # it is important this happens before handling
-            # executable tasks so we get to make tasks executable
-            # and then execute them in this iteration (otherwise, it would
-            # be the next one)
-            for task in self._terminated_tasks():
-                self._handle_terminated_task(task)
-
-            # if there was an error when handling terminated tasks, don't
-            # continue on to sending new tasks in handle_executable
-            if self._error:
-                break
-
-            # handle all executable tasks
-            for task in self._executable_tasks():
-                self._handle_executable_task(task)
-
-            # no more tasks to process, time to move on
-            if len(self.graph.node) == 0:
-                if self._error:
-                    raise self._error
-                return
-            # sleep some and do it all over again
-            else:
-                time.sleep(0.1)
-
-        # if we got here, we had an error in a task, and we're just waiting
-        # for other tasks to return, but not sending new tasks
-        deadline = time.time() + self.ctx.wait_after_fail
-        while deadline > time.time():
-            if self._is_execution_cancelled():
-                raise api.ExecutionCancelled()
-            for task in self._terminated_tasks():
-                self._handle_terminated_task(task)
-            if not any(self._sent_tasks()):
-                break
-            else:
-                time.sleep(0.1)
-        raise self._error
+        current = {self._root}
+        while current:
+            done, pending = asyncio.wait(
+                [task.async_result for task in current if task is not None],
+                return_when=asyncio.FIRST_COMPLETED
+            )
+            next_step = set()
+            for finished_task in done:
+                next_step.update(finished_task.children)
+                for child in finished_task.children:
+                    child.apply_async()
+                current.remove(finished_task)
+            current.update(next_step)
 
     @staticmethod
     def _is_execution_cancelled():
