@@ -1,10 +1,11 @@
+import aiohttp
 import logging
 import asyncio
 import aio_pika
 import json
 
 from cloudify import utils
-from cloudify.workflows import workflow_context
+from mgmtworker.workflows import workflow_context
 
 logger = logging.getLogger()
 
@@ -35,9 +36,17 @@ class Worker:
         ctx = task['kwargs'].pop('__cloudify_context')
         args = task.get('args', [])
         kwargs = task['kwargs']
+        ctx['worker'] = self
         wctx = workflow_context.CloudifyWorkflowContext(ctx)
+        await wctx.prepare()
         func = utils.get_func(wctx['task_name'])
         logging.info('wctx %s func %s', wctx, func)
+
+    @property
+    def rest_session(self):
+        if self._session is None:
+            self._session = aiohttp.ClientSession()
+        return self._session
 
     async def main(self):
         finished = asyncio.Event()
