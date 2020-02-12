@@ -61,7 +61,7 @@ from cloudify.logs import (CloudifyWorkflowLoggingHandler,
 from cloudify.utils import is_agent_alive
 from cloudify_rest_client.nodes import Node
 from cloudify_rest_client.node_instances import NodeInstance
-
+from cloudify_rest_client.manager import ConfigItem
 
 try:
     from collections import OrderedDict
@@ -1400,10 +1400,14 @@ class RemoteContextHandler(CloudifyWorkflowContextHandler):
         response = await self.workflow_ctx.rest_client.request(
             'GET', 'provider/context')
         context = await response.json()
+        config_response = await client.manager.get_config(scope='workflow')
+        workflow_config = await config_response.json()
+        workflow_config = [
+            ConfigItem(item) for item in config_response['items']]
         context = context.get('cloudify', {})
         context.setdefault('workflows', {}).update(
             (c.name, c.value)
-            for c in client.manager.get_config(scope='workflow')
+            for c in workflow_config
         )
         self.bootstrap_context = context
 
