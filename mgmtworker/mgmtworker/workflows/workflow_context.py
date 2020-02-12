@@ -1203,10 +1203,6 @@ class CloudifyWorkflowContextHandler(object):
     def get_node_logging_handler(self, workflow_node_instance):
         raise NotImplementedError('Implemented by subclasses')
 
-    @property
-    def bootstrap_context(self):
-        raise NotImplementedError('Implemented by subclasses')
-
     def get_send_task_event_func(self, task):
         raise NotImplementedError('Implemented by subclasses')
 
