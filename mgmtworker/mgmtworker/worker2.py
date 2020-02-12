@@ -41,6 +41,7 @@ class Worker:
             return self._channels[vhost]
         kwargs = get_conn_kwargs(vhost)
         logger.info('conn kwargs for %s: %s', vhost, kwargs)
+        logger.info('stored: %s', self._channels)
         connection = await aio_pika.connect_robust(
             loop=self._loop,
             **kwargs
