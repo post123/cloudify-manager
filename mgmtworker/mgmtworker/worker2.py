@@ -3,6 +3,9 @@ import asyncio
 import aio_pika
 import json
 
+from cloudify import utils
+from cloudify.workflows import workflow_context
+
 logger = logging.getLogger()
 
 
@@ -21,37 +24,48 @@ def get_conn_kwargs():
     }
 
 
-async def handle_message(message):
-    data = json.loads(message.body)
-    logging.info('hello %s, %s', message, data)
+class Worker:
+    def __init__(self, loop):
+        self._loop = loop
 
+    async def handle_message(self, message):
+        data = json.loads(message.body)
+        logging.info('hello %s, %s', message, data)
+        task = data['cloudify_task']
+        ctx = task['kwargs'].pop('__cloudify_context')
+        args = task.get('args', [])
+        kwargs = task['kwargs']
+        wctx = workflow_context.CloudifyWorkflowContext(ctx)
+        func = utils.get_func(wctx['task_name'])
+        logging.info('wctx %s func %s', wctx, func)
 
-async def main(loop):
-    finished = asyncio.Event()
-    connection = await aio_pika.connect_robust(
-        loop=loop,
-        **get_conn_kwargs()
-    )
-
-    async with connection:
-        queue_name = "cloudify.management_workflow"
-
-        channel = await connection.channel()
-        queue = await channel.declare_queue(
-            queue_name,
-            durable=True
+    async def main(self):
+        finished = asyncio.Event()
+        connection = await aio_pika.connect_robust(
+            loop=self._loop,
+            **get_conn_kwargs()
         )
-        await channel.declare_exchange(
-            name='cloudify.management',
-            durable=True
-        )
-        await queue.bind('cloudify.management', routing_key='workflow')
-        await queue.consume(handle_message, no_ack=True)
-        await finished.wait()
+
+        async with connection:
+            queue_name = "cloudify.management_workflow"
+
+            channel = await connection.channel()
+            queue = await channel.declare_queue(
+                queue_name,
+                durable=True
+            )
+            await channel.declare_exchange(
+                name='cloudify.management',
+                durable=True
+            )
+            await queue.bind('cloudify.management', routing_key='workflow')
+            await queue.consume(handle_message, no_ack=True)
+            await finished.wait()
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main(loop))
+    worker = Worker(loop)
+    loop.run_until_complete(worker.main())
     loop.close()
