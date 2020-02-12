@@ -480,13 +480,13 @@ class _WorkflowContextBase(object):
         else:
             handler = remote_ctx_handler_cls(self)
         self._handler = handler
-        self._internal = CloudifyWorkflowContextInternal(self, handler)
         # is this execution being resumed? set to True if at the beginning
         # of handling the execution, the status was already STARTED
         self.resume = False
 
     async def prepare(self):
         await self._handler.prepare()
+        self._internal = CloudifyWorkflowContextInternal(self, handler)
 
     def graph_mode(self):
         """
