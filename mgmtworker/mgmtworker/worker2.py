@@ -23,7 +23,7 @@ def get_conn_kwargs(vhost='/'):
         },
         'login': broker_config['broker_username'],
         'password': broker_config['broker_password'],
-        'vhost': vhost
+        'virtualhost': vhost
     }
 
 
