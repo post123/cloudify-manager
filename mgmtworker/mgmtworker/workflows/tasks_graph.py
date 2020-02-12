@@ -213,9 +213,9 @@ class TaskDependencyGraph(object):
                item = self._tasks[task.id]
                item.parents.add(dst_item)
                dst_item.children.add(item)
-        if not isinstance(src_task, SubgraphTask) and not isinstance(dst_task, SubgraphTask):
-            src_item.parents.add(dst_item)
-            dst_item.children.add(src_item)
+               
+        src_item.parents.add(dst_item)
+        dst_item.children.add(src_item)
 
     def sequence(self):
         """
