@@ -41,6 +41,11 @@ class Worker:
         wctx = workflow_context.CloudifyWorkflowContext(ctx)
         await wctx.prepare()
         func = utils.get_func(ctx['task_name'])
+        await wctx.internal.send_workflow_event(
+            event_type='workflow_started',
+            message="Starting '{0}' workflow execution".format(
+                wctx.workflow_id)
+        )
         try:
             await func(wctx, **kwargs)
         except Exception:
