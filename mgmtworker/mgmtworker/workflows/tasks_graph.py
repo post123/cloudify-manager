@@ -252,6 +252,8 @@ class TaskDependencyGraph(object):
             next_step = set()
             for finished_task in done:
                 finished_task = finished_task.result()
+                if finished_task.is_subgraph():
+                    continue
                 graph_item = self._tasks[finished_task.id]
                 for child in graph_item.children:
                     child.parents.remove(graph_item)
@@ -259,6 +261,13 @@ class TaskDependencyGraph(object):
                         child.data.apply_async()
                         next_step.add(child)
                 current.remove(graph_item)
+                if finished_task.containing_subgraph:
+                    del finished_task.containing_subgraph.tasks[finished_task.id]
+                    if not finished_task.containing_subgraph.tasks:
+                        subgraph_item = self._tasks[finished_task.containing_subgraph.id]
+                        for sub_child in subgraph_item.children:
+                            sub_child.parents.remove(subgraph_item)
+                        subgraph_item.children = set()
             current.update(next_step)
 
     @staticmethod
