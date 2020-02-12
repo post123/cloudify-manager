@@ -29,6 +29,7 @@ class Worker:
     def __init__(self, loop):
         self._loop = loop
         self._session = None
+        self._events_exchange = None
 
     async def handle_message(self, message):
         data = json.loads(message.body)
@@ -80,6 +81,10 @@ class Worker:
             )
             await channel.declare_exchange(
                 name='cloudify.management',
+                durable=True
+            )
+            self._events_exchange = await channel.declare_exchange(
+                name='cloudify-events-topic',
                 durable=True
             )
             await queue.bind('cloudify.management', routing_key='workflow')

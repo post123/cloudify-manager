@@ -507,8 +507,12 @@ class _WorkflowContextBase(object):
         return self.internal.task_graph
 
     @property
+    def worker(self):
+        return self._context['worker']
+
+    @property
     def rest_client(self):
-        return AsyncRestClient(self._context['worker'].rest_session, self)
+        return AsyncRestClient(self.worker.rest_session, self)
 
     @property
     def bootstrap_context(self):
