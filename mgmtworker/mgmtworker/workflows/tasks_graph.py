@@ -245,6 +245,7 @@ class TaskDependencyGraph(object):
             aws = [task.data.async_result
                  for task in current
                  if task is not None]
+            logger.info('aws %s', aws)
             done, pending = await asyncio.wait(
                 aws,
                 return_when=asyncio.FIRST_COMPLETED
