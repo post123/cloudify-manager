@@ -301,6 +301,11 @@ class CloudifyWorkflowNodeInstance(object):
         """The node instance state"""
         return self._node_instance.state
 
+    @state.setter
+    def state(self, val):
+        """The node instance state"""
+        self._node_instance.state = val
+
     @property
     def node_id(self):
         """The node id (this instance is an instance of that node)"""
