@@ -505,7 +505,7 @@ class _WorkflowContextBase(object):
 
     @property
     def rest_client(self):
-        return AsyncRestClient(self._context['worker'].rest_session)
+        return AsyncRestClient(self._context['worker'].rest_session, self)
 
     @property
     def bootstrap_context(self):
