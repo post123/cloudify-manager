@@ -22,7 +22,8 @@ def get_conn_kwargs():
 
 
 async def handle_message(message):
-    logging.info('hello %s', message)
+    data = json.loads(message.body)
+    logging.info('hello %s, %s', message, data)
 
 
 async def main(loop):
@@ -46,7 +47,7 @@ async def main(loop):
         )
         await queue.bind('cloudify.management', routing_key='workflow')
         await queue.consume(handle_message, no_ack=True)
-        await event.wait()
+        await finished.wait()
 
 
 if __name__ == "__main__":
