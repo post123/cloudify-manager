@@ -908,7 +908,6 @@ class _WorkflowContextBase(object):
 class WorkflowNodesAndInstancesContainer(object):
 
     async def prepare(self):
-        await super(WorkflowNodesAndInstancesContainer, self).prepare()
         nodes_response = await self.rest_client.request(
             'GET',
             f'/nodes?deployment_id={self.deployment.id}&_get_all_results=True&evaluate_functions=True',  # NOQA
