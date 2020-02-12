@@ -52,9 +52,12 @@ def make_or_get_graph(f):
 
 class RootTask:
     id = None
-    def apply_async(self):
+    def __init__(self):
         async def _wait():
             return self
+        self.async_result = _wait()
+
+    def apply_async(self):
         return _wait()
 
 
@@ -237,7 +240,9 @@ class TaskDependencyGraph(object):
         current = {self._root}
         while current:
             done, pending = asyncio.wait(
-                [task.async_result for task in current if task is not None],
+                [task.data.async_result 
+                 for task in current
+                 if task is not None],
                 return_when=asyncio.FIRST_COMPLETED
             )
             next_step = set()
