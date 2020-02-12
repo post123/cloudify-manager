@@ -104,6 +104,7 @@ class Worker:
         queue_name = "cloudify.management_workflow"
 
         channel = await self.get_channel('/')
+        await self.get_channel('rabbitmq_vhost_default_tenant')
         self.channel = channel
         queue = await channel.declare_queue(
             queue_name,
