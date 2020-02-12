@@ -923,12 +923,12 @@ class WorkflowNodesAndInstancesContainer(object):
         raw_node_instances = [NodeInstance(item)
                               for item in instances_json['items']]
         self._nodes = dict(
-            (node.id, CloudifyWorkflowNode(workflow_context, node, self))
+            (node.id, CloudifyWorkflowNode(self, node, self))
             for node in raw_nodes)
 
         self._node_instances = dict(
             (instance.id, CloudifyWorkflowNodeInstance(
-                workflow_context, self._nodes[instance.node_id], instance,
+                self, self._nodes[instance.node_id], instance,
                 self))
             for instance in raw_node_instances)
 
