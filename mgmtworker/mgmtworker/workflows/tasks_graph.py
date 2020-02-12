@@ -254,7 +254,7 @@ class TaskDependencyGraph(object):
                 graph_item = self._tasks[finished_task.id]
                 next_step.update(graph_item.children)
                 for child in graph_item.children:
-                    child.apply_async()
+                    child.data.apply_async()
                 current.remove(graph_item)
             current.update(next_step)
 
