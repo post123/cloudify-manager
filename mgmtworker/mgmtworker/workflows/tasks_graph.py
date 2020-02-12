@@ -274,6 +274,8 @@ class TaskDependencyGraph(object):
                 for child in graph_item.children:
                     child.parents.remove(graph_item)
                     if not child.parents:
+                        if isinstance(child.data, SubgraphTask):
+                            continue
                         child.data.apply_async()
                         next_step.add(child)
                 current.remove(graph_item)
