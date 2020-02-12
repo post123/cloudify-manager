@@ -251,10 +251,11 @@ class TaskDependencyGraph(object):
             for finished_task in done:
                 finished_task = finished_task.result()
                 logger.info('finished: %s', finished_task)
-                next_step.update(finished_task.children)
-                for child in finished_task.children:
+                graph_item = self._tasks[finished_task.id]
+                next_step.update(graph_item.children)
+                for child in graph_item.children:
                     child.apply_async()
-                current.remove(finished_task)
+                current.remove(graph_item)
             current.update(next_step)
 
     @staticmethod
