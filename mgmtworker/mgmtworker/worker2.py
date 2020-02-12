@@ -41,7 +41,7 @@ class Worker:
         await wctx.prepare()
         func = utils.get_func(ctx['task_name'])
         try:
-            func(wctx, **kwargs)
+            await func(wctx, **kwargs)
         except Exception:
             logger.exception('failed')
             await wctx.rest_client.request(
