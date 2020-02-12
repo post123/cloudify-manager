@@ -148,7 +148,7 @@ def _retry_if_file_already_exists(exception):
 @retry(retry_on_exception=_retry_if_file_already_exists,
        stop_max_delay=60000,
        wait_fixed=2000)
-def _create_deployment_workdir(deployment_id, logger, tenant):
+def _create_deployment_workdir(ctx, deployment_id, logger, tenant):
     deployment_workdir = _workdir(deployment_id, tenant)
     try:
         os.makedirs(deployment_workdir)
