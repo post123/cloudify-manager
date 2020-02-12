@@ -249,6 +249,7 @@ class TaskDependencyGraph(object):
             )
             next_step = set()
             for finished_task in done:
+                finished_task = finished_task.result()
                 logger.info('finished: %s', finished_task)
                 next_step.update(finished_task.children)
                 for child in finished_task.children:
