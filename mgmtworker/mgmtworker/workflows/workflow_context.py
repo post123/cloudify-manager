@@ -1400,7 +1400,8 @@ class RemoteContextHandler(CloudifyWorkflowContextHandler):
         response = await self.workflow_ctx.rest_client.request(
             'GET', 'provider/context')
         context = await response.json()
-        config_response = await client.manager.get_config(scope='workflow')
+        config_response = await self.workflow_ctx.rest_client.request(
+            'GET', 'config?scope=workflow')
         workflow_config = await config_response.json()
         workflow_config = [
             ConfigItem(item) for item in config_response['items']]
