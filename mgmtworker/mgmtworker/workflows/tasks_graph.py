@@ -64,7 +64,7 @@ class GraphItem:
         self.children = set()
 
     def __hash__(self):
-        return self.data.id
+        return hash(self.data.id)
 
     def __eq__(self, other):
         return self.data.id == other.data.id
