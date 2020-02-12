@@ -59,7 +59,7 @@ class Worker:
                 durable=True
             )
             await queue.bind('cloudify.management', routing_key='workflow')
-            await queue.consume(handle_message, no_ack=True)
+            await queue.consume(self.handle_message, no_ack=True)
             await finished.wait()
 
 
