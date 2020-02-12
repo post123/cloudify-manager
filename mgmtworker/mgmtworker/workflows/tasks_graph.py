@@ -203,19 +203,26 @@ class TaskDependencyGraph(object):
             src_item.parents.remove(self._root)
             self._root.children.remove(src_item)
         dst_item = self._tasks[dst_task.id]
-        if isinstance(dst_task, SubgraphTask):
+        if isinstance(dst_task, SubgraphTask) and isinstance(src_task, SubgraphTask):
+           for task in dst_task.tasks.values():
+                dst_item = self._tasks[task.id]
+                for task2 in src_task.tasks.values():
+                    src_item = self._tasks[task2.id]
+                    src_item.parents.add(dst_item)
+                    dst_item.children.add(src_item) 
+        elif isinstance(dst_task, SubgraphTask):
            for task in dst_task.tasks.values():
                item = self._tasks[task.id]
                src_item.parents.add(item)
                item.children.add(src_item)
-        if isinstance(src_task, SubgraphTask):
+        elif isinstance(src_task, SubgraphTask):
            for task in src_task.tasks.values():
                item = self._tasks[task.id]
                item.parents.add(dst_item)
                dst_item.children.add(item)
-               
-        src_item.parents.add(dst_item)
-        dst_item.children.add(src_item)
+        else:
+            src_item.parents.add(dst_item)
+            dst_item.children.add(src_item)
 
     def sequence(self):
         """
