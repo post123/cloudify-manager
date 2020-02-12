@@ -489,7 +489,7 @@ class _WorkflowContextBase(object):
 
     async def prepare(self):
         await self._handler.prepare()
-        self._internal = CloudifyWorkflowContextInternal(self, handler)
+        self._internal = CloudifyWorkflowContextInternal(self, self._handler)
 
     def graph_mode(self):
         """
@@ -1404,7 +1404,7 @@ class RemoteContextHandler(CloudifyWorkflowContextHandler):
             'GET', 'config?scope=workflow')
         workflow_config = await config_response.json()
         workflow_config = [
-            ConfigItem(item) for item in config_response['items']]
+            ConfigItem(item) for item in workflow_config['items']]
         context = context.get('cloudify', {})
         context.setdefault('workflows', {}).update(
             (c.name, c.value)
