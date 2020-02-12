@@ -256,11 +256,11 @@ class TaskDependencyGraph(object):
             for finished_task in done:
                 finished_task = finished_task.result()
                 graph_item = self._tasks[finished_task.id]
-                next_step.update(graph_item.children)
                 for child in graph_item.children:
                     child.parents.remove(graph_item)
                     if not child.parents:
                         child.data.apply_async()
+                        next_step.add(child)
                 current.remove(graph_item)
             current.update(next_step)
 
