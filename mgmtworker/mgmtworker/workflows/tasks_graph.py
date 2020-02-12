@@ -201,6 +201,7 @@ class TaskDependencyGraph(object):
         src_item = self._tasks[src_task.id]
         if dst_task is not None and self._root in src_item.parents:
             src_item.parents.remove(self._root)
+            self._root.children.remove(src_item)
         dst_item = self._tasks[dst_task.id]
         src_item.parents.add(dst_item)
         dst_item.children.add(src_item)
