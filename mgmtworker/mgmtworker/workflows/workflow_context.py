@@ -49,7 +49,6 @@ from cloudify import utils, logs, exceptions
 from cloudify.state import current_workflow_ctx
 from cloudify.workflows import events
 from cloudify.error_handling import deserialize_known_exception
-from cloudify.workflows.tasks_graph import TaskDependencyGraph
 from cloudify.amqp_client_utils import AMQPWrappedThread
 from cloudify.logs import (CloudifyWorkflowLoggingHandler,
                            CloudifyWorkflowNodeLoggingHandler,
@@ -63,6 +62,7 @@ from cloudify_rest_client.nodes import Node
 from cloudify_rest_client.node_instances import NodeInstance
 from cloudify_rest_client.manager import ConfigItem
 
+from mgmtworker.workflows.tasks_graph import TaskDependencyGraph
 try:
     from collections import OrderedDict
 except ImportError:

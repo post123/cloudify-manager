@@ -41,6 +41,20 @@ class Worker:
         wctx = workflow_context.CloudifyWorkflowContext(ctx)
         await wctx.prepare()
         func = utils.get_func(ctx['task_name'])
+        try:
+            func(wctx, **kwargs)
+        except Exception:
+            await wctx.rest_client.request(
+                'PATCH',
+                f'executions/{wctx.execution_id}',
+                json={'status': 'failed'}
+            )
+        else:
+            await wctx.rest_client.request(
+                'PATCH',
+                f'executions/{wctx.execution_id}',
+                json={'status': 'terminated'}
+            )
         logging.info('wctx %s func %s', wctx, func)
 
     @property
