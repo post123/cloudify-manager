@@ -253,7 +253,7 @@ class TaskDependencyGraph(object):
             next_step = set()
             for finished_task in done:
                 finished_task = finished_task.result()
-                if finished_task.is_subgraph():
+                if finished_task.is_subgraph:
                     continue
                 graph_item = self._tasks[finished_task.id]
                 for child in graph_item.children:
