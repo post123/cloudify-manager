@@ -908,15 +908,17 @@ class WorkflowNodesAndInstancesContainer(object):
 
     async def prepare(self):
         await super(WorkflowNodesAndInstancesContainer, self).prepare()
-        raw_nodes = self.rest_client.request(
+        nodes_response = await self.rest_client.request(
             'GET',
             f'/nodes?deployment_id={self.deployment.id}&_get_all_results=True&evaluate_functions=True',  # NOQA
         )
+        raw_nodes = await nodes_response.json()
         raw_nodes = [Node(item) for item in raw_nodes['items']]
-        raw_node_instances = self.rest_client.request(
+        instances_response = await self.rest_client.request(
             'GET',
             f'/node-instances?deployment_id={self.deployment.id}&_get_all_results=True',
         )
+        raw_node_instances = await instances_response.json()
         raw_node_instances = [NodeInstance(['item'])
                               for item in raw_node_instances]
         self._nodes = dict(
@@ -1395,8 +1397,9 @@ class RemoteContextHandler(CloudifyWorkflowContextHandler):
         self._dispatcher = _TaskDispatcher()
 
     async def prepare(self):
-        context = await self.workflow_ctx.rest_client.request(
+        response = await self.workflow_ctx.rest_client.request(
             'GET', 'provider/context')
+        context = await response.json()
         context = context.get('cloudify', {})
         context.setdefault('workflows', {}).update(
             (c.name, c.value)
