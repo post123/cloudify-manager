@@ -254,15 +254,15 @@ class TaskDependencyGraph(object):
             next_step = set()
             for finished_task in done:
                 finished_task = finished_task.result()
+                graph_item = self._tasks[finished_task.id]
+                current.remove(graph_item)
                 if finished_task.is_subgraph:
                     continue
-                graph_item = self._tasks[finished_task.id]
                 for child in graph_item.children:
                     child.parents.remove(graph_item)
                     if not child.parents:
                         child.data.apply_async()
                         next_step.add(child)
-                current.remove(graph_item)
                 if finished_task.containing_subgraph:
                     del finished_task.containing_subgraph.tasks[finished_task.id]
                     if not finished_task.containing_subgraph.tasks:
