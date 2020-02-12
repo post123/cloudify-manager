@@ -39,9 +39,11 @@ class Worker:
     async def get_channel(self, vhost):
         if vhost in self._channels:
             return self._channels[vhost]
+        kwargs = get_conn_kwargs(vhost)
+        logger.info('conn kwargs %s', kwargs)
         connection = await aio_pika.connect_robust(
             loop=self._loop,
-            **get_conn_kwargs(vhost)
+            **kwargs
         )
         channel = await connection.channel()
         self._connections[vhost] = connection
