@@ -56,6 +56,7 @@ async def _wait(self):
 
 class RootTask:
     id = None
+    is_subgraph = False
     def __init__(self):
         self.async_result = _wait(self)
 
