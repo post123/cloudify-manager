@@ -1397,7 +1397,6 @@ class RemoteContextHandler(CloudifyWorkflowContextHandler):
     async def prepare(self):
         context = await self.workflow_ctx.rest_client.request(
             'GET', 'provider/context')
-        context = client.manager.get_context()['context']
         context = context.get('cloudify', {})
         context.setdefault('workflows', {}).update(
             (c.name, c.value)
