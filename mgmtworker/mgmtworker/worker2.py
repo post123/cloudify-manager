@@ -31,7 +31,7 @@ class Worker:
         self._session = None
         self._events_exchange = None
         self.channel = None
-`
+
     async def handle_message(self, message):
         data = json.loads(message.body)
         task = data['cloudify_task']
