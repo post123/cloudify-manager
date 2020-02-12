@@ -450,15 +450,16 @@ class CloudifyWorkflowNode(object):
 class AsyncRestClient:
     def __init__(self, session, workflow_context):
         self._session = session
-        ssl_context = ssl.SSLContext()
-        ssl_context.load_verify_locations(
-            cafile='/etc/cloudify/ssl/cloudify_internal_ca_cert.pem')
+        # ssl_context = ssl.SSLContext()
+        # ssl_context.load_verify_locations(
+            # cafile='/etc/cloudify/ssl/cloudify_internal_ca_cert.pem')
         self._kwargs = {
             'headers': {
                 'Execution-Token': workflow_context.execution_token,
                 'Tenant': workflow_context.tenant_name
             },
-            'ssl': ssl_context
+            # 'ssl': ssl_context
+            'ssl': False
         }
 
     def request(self, method, url, **kwargs):
