@@ -148,7 +148,7 @@ class TaskDependencyGraph(object):
         :param task: The task
         """
         self._tasks[task.id] = GraphItem(task)
-        self.add_dependency(task, self._root)
+        self.add_dependency(task, self._root.data)
 
     def get_task(self, task_id):
         """Get a task instance that was inserted to this graph by its id
