@@ -28,6 +28,7 @@ def get_conn_kwargs():
 class Worker:
     def __init__(self, loop):
         self._loop = loop
+        self._session = None
 
     async def handle_message(self, message):
         data = json.loads(message.body)
