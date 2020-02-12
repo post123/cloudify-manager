@@ -50,6 +50,7 @@ def make_or_get_graph(f):
 
 
 class RootTask:
+    id = None
     def apply_async(self):
         async def _wait():
             return self
@@ -61,6 +62,12 @@ class GraphItem:
         self.data = data
         self.parents = set()
         self.children = set()
+
+    def __hash__(self):
+        return self.data.id
+
+    def __eq__(self, other):
+        return self.data.id == other.data.id
 
 
 class TaskDependencyGraph(object):
@@ -141,7 +148,7 @@ class TaskDependencyGraph(object):
         :param task: The task
         """
         self._tasks[task.id] = GraphItem(task)
-        self.add_dependency(task, None)
+        self.add_dependency(task, self._root)
 
     def get_task(self, task_id):
         """Get a task instance that was inserted to this graph by its id
