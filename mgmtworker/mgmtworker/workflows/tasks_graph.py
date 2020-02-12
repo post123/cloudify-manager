@@ -56,8 +56,6 @@ async def _wait(self):
 
 class RootTask:
     id = None
-    containing_subgraph = None
-    is_subgraph = False
     def __init__(self):
         self.async_result = _wait(self)
 
@@ -255,21 +253,12 @@ class TaskDependencyGraph(object):
             for finished_task in done:
                 finished_task = finished_task.result()
                 graph_item = self._tasks[finished_task.id]
-                current.remove(graph_item)
-                if finished_task.is_subgraph:
-                    continue
                 for child in graph_item.children:
                     child.parents.remove(graph_item)
                     if not child.parents:
                         child.data.apply_async()
                         next_step.add(child)
-                if finished_task.containing_subgraph:
-                    del finished_task.containing_subgraph.tasks[finished_task.id]
-                    if not finished_task.containing_subgraph.tasks:
-                        subgraph_item = self._tasks[finished_task.containing_subgraph.id]
-                        for sub_child in subgraph_item.children:
-                            sub_child.parents.remove(subgraph_item)
-                        subgraph_item.children = set()
+                current.remove(graph_item)
             current.update(next_step)
 
     @staticmethod
