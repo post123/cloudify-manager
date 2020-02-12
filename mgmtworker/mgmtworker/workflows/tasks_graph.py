@@ -55,7 +55,7 @@ class RootTask:
     def __init__(self):
         async def _wait():
             return self
-        self.async_result = _wait()
+        self.async_result = asyncio.Task(_wait())
 
     def apply_async(self):
         return _wait()
