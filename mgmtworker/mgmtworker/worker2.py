@@ -85,7 +85,8 @@ class Worker:
             )
             self._events_exchange = await channel.declare_exchange(
                 name='cloudify-events-topic',
-                durable=True
+                durable=True,
+                type='topic'
             )
             await queue.bind('cloudify.management', routing_key='workflow')
             await queue.consume(self.handle_message, no_ack=True)
