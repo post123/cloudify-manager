@@ -100,11 +100,6 @@ class Worker:
 
     async def main(self):
         finished = asyncio.Event()
-        connection = await aio_pika.connect_robust(
-            loop=self._loop,
-            **get_conn_kwargs()
-        )
-
         queue_name = "cloudify.management_workflow"
 
         channel = await self.get_channel('/')
