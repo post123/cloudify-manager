@@ -488,6 +488,7 @@ class _WorkflowContextBase(object):
         self.resume = False
 
     async def prepare(self):
+        await super(_WorkflowContextBase, self).prepare()
         await self._handler.prepare()
         self._internal = CloudifyWorkflowContextInternal(self, self._handler)
 
