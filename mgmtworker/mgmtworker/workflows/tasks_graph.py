@@ -50,15 +50,17 @@ def make_or_get_graph(f):
     return _inner
 
 
+async def _wait(self):
+    return self
+
+
 class RootTask:
     id = None
     def __init__(self):
-        async def _wait():
-            return self
-        self.async_result = _wait()
+        self.async_result = _wait(self)
 
     def apply_async(self):
-        return _wait()
+        return _wait(self)
 
 
 class GraphItem:
@@ -422,7 +424,7 @@ class SubgraphTask(tasks.WorkflowTask):
         self.failed_task = None
         if not self.on_failure:
             self.on_failure = lambda tsk: tasks.HandlerResult.fail()
-        self.async_result = tasks.StubAsyncResult()
+        self.async_result = _wait(self)
 
     @classmethod
     def restore(cls, ctx, graph, task_descr):
