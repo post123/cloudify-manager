@@ -241,7 +241,7 @@ class TaskDependencyGraph(object):
         self._error = None
         current = {self._root}
         while current:
-            aws = [asyncio.ensure_future(task.data.async_result)
+            aws = [task.data.async_result
                  for task in current
                  if task is not None]
             logger.info('aws %s', aws)
