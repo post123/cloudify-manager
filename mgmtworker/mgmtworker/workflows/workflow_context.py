@@ -912,15 +912,15 @@ class WorkflowNodesAndInstancesContainer(object):
             'GET',
             f'nodes?deployment_id={self.deployment.id}&_get_all_results=True&evaluate_functions=True',  # NOQA
         )
-        raw_nodes = await nodes_response.json()
-        raw_nodes = [Node(item) for item in raw_nodes['items']]
+        nodes_json = await nodes_response.json()
+        raw_nodes = [Node(item) for item in nodes_json['items']]
         instances_response = await self.rest_client.request(
             'GET',
             f'node-instances?deployment_id={self.deployment.id}&_get_all_results=True',
         )
-        raw_node_instances = await instances_response.json()
-        raw_node_instances = [NodeInstance(['item'])
-                              for item in raw_node_instances]
+        instances_json = await instances_response.json()
+        raw_node_instances = [NodeInstance(item)
+                              for item in instances_json]
         self._nodes = dict(
             (node.id, CloudifyWorkflowNode(workflow_context, node, self))
             for node in raw_nodes)
