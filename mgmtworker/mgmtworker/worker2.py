@@ -26,6 +26,7 @@ async def handle_message(message):
 
 
 async def main(loop):
+    finished = asyncio.Event()
     connection = await aio_pika.connect_robust(
         loop=loop,
         **get_conn_kwargs()
@@ -44,7 +45,9 @@ async def main(loop):
             durable=True
         )
         await queue.bind('cloudify.management', routing_key='workflow')
-        queue.consume(handle_message, no_ack=True)
+        await queue.consume(handle_message, no_ack=True)
+        await event.wait()
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
