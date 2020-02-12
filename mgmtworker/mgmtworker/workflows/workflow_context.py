@@ -1145,7 +1145,7 @@ class CloudifyWorkflowContextInternal(object):
                             message=None,
                             args=None,
                             additional_context=None):
-        self.handler.send_workflow_event(event_type=event_type,
+        return self.handler.send_workflow_event(event_type=event_type,
                                          message=message,
                                          args=args,
                                          additional_context=additional_context)
@@ -1543,7 +1543,7 @@ class RemoteCloudifyWorkflowContextHandler(RemoteContextHandler):
 
     def send_workflow_event(self, event_type, message=None, args=None,
                             additional_context=None):
-        send_workflow_event(self.workflow_ctx,
+        return send_workflow_event(self.workflow_ctx,
                             event_type=event_type,
                             message=message,
                             args=args,
@@ -1569,7 +1569,7 @@ class SystemWideWfRemoteContextHandler(RemoteContextHandler):
 
     def send_workflow_event(self, event_type, message=None, args=None,
                             additional_context=None):
-        send_sys_wide_wf_event(self.workflow_ctx,
+        return send_sys_wide_wf_event(self.workflow_ctx,
                                event_type=event_type,
                                message=message,
                                args=args,
