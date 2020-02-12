@@ -910,13 +910,13 @@ class WorkflowNodesAndInstancesContainer(object):
     async def prepare(self):
         nodes_response = await self.rest_client.request(
             'GET',
-            f'/nodes?deployment_id={self.deployment.id}&_get_all_results=True&evaluate_functions=True',  # NOQA
+            f'nodes?deployment_id={self.deployment.id}&_get_all_results=True&evaluate_functions=True',  # NOQA
         )
         raw_nodes = await nodes_response.json()
         raw_nodes = [Node(item) for item in raw_nodes['items']]
         instances_response = await self.rest_client.request(
             'GET',
-            f'/node-instances?deployment_id={self.deployment.id}&_get_all_results=True',
+            f'node-instances?deployment_id={self.deployment.id}&_get_all_results=True',
         )
         raw_node_instances = await instances_response.json()
         raw_node_instances = [NodeInstance(['item'])
