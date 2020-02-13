@@ -61,7 +61,7 @@ class Worker:
         func = utils.get_func(ctx['task_name'])
         logger.info(
             '%s Starting %s workflow execution',
-            wctx.execution_id, wcxt.workflow_id
+            wctx.execution_id, wctx.workflow_id
         )
         await wctx.internal.send_workflow_event(
             event_type='workflow_started',
@@ -78,7 +78,7 @@ class Worker:
         except Exception as e:
             logger.info(
                 '%s Failed %s workflow execution',
-                wctx.execution_id, wcxt.workflow_id
+                wctx.execution_id, wctx.workflow_id
             )
             await wctx.rest_client.request(
                 'PATCH',
@@ -103,7 +103,7 @@ class Worker:
             )
         logger.info(
             '%s Finished %s workflow execution',
-            wctx.execution_id, wcxt.workflow_id
+            wctx.execution_id, wctx.workflow_id
         )
 
     @property
