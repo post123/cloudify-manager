@@ -66,6 +66,11 @@ class Worker:
             message="Starting '{0}' workflow execution".format(
                 wctx.workflow_id)
         )
+        await wctx.rest_client.request(
+            'PATCH',
+            f'executions/{wctx.execution_id}',
+            json={'status': 'started'}
+        )
         try:
             await func(wctx, **kwargs)
         except Exception as e:
