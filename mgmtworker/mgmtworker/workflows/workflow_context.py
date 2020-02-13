@@ -1139,7 +1139,7 @@ class CloudifyWorkflowContextInternal(object):
 
     def send_task_event(self, state, task, event=None):
         send_task_event_func = self.handler.get_send_task_event_func(task)
-        events.send_task_event(state, task, send_task_event_func, event)
+        return events.send_task_event(state, task, send_task_event_func, event)
 
     def send_workflow_event(self,
                             event_type,
