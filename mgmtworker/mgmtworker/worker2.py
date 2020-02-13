@@ -40,8 +40,6 @@ class Worker:
         if vhost in self._channels:
             return self._channels[vhost]
         kwargs = get_conn_kwargs(vhost)
-        logger.info('conn kwargs for %s: %s', vhost, kwargs)
-        logger.info('stored: %s', self._channels)
         connection = await aio_pika.connect_robust(
             loop=self._loop,
             **kwargs
@@ -61,6 +59,10 @@ class Worker:
         wctx = workflow_context.CloudifyWorkflowContext(ctx)
         await wctx.prepare()
         func = utils.get_func(ctx['task_name'])
+        logger.info(
+            '%s Starting %s workflow execution',
+            wctx.execution_id, wcxt.workflow_id
+        )
         await wctx.internal.send_workflow_event(
             event_type='workflow_started',
             message="Starting '{0}' workflow execution".format(
@@ -74,7 +76,10 @@ class Worker:
         try:
             await func(wctx, **kwargs)
         except Exception as e:
-            logger.exception('failed')
+            logger.info(
+                '%s Failed %s workflow execution',
+                wctx.execution_id, wcxt.workflow_id
+            )
             await wctx.rest_client.request(
                 'PATCH',
                 f'executions/{wctx.execution_id}',
@@ -96,7 +101,10 @@ class Worker:
                 message="'{0}' workflow execution succeeded".format(
                     wctx.workflow_id),
             )
-        logging.info('wctx %s func %s', wctx, func)
+        logger.info(
+            '%s Finished %s workflow execution',
+            wctx.execution_id, wcxt.workflow_id
+        )
 
     @property
     def rest_session(self):
@@ -110,6 +118,7 @@ class Worker:
 
         channel = await self.get_channel('/')
         await self.get_channel('rabbitmq_vhost_default_tenant')
+        logger.info('Waiting for executions...')
         self.channel = channel
         queue = await channel.declare_queue(
             queue_name,
@@ -137,6 +146,7 @@ class Worker:
 if __name__ == "__main__":
     os.environ['AGENT_WORK_DIR'] = '/opt/mgmtworker/work'
     logging.basicConfig(level=logging.INFO)
+    logging.getLogger('aio_pika.queue').setLevel(logging.WARNING)
     loop = asyncio.get_event_loop()
     worker = Worker(loop)
     loop.run_until_complete(worker.main())
