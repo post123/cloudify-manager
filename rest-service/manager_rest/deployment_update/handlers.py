@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 
 from copy import deepcopy
 from sqlalchemy import and_, cast
 from sqlalchemy.dialects.postgresql import JSON
 
-import utils as deployment_update_utils
+from . import utils as deployment_update_utils
 
 from cloudify.constants import COMPUTE_NODE_TYPE
 from cloudify.workflows import tasks as cloudify_tasks
@@ -14,8 +15,8 @@ from dsl_parser.constants import (HOST_AGENT,
                                   PLUGIN_EXECUTOR_KEY)
 
 from manager_rest import utils
-from entity_context import get_entity_context
-from constants import ENTITY_TYPES, NODE_MOD_TYPES
+from .entity_context import get_entity_context
+from .constants import ENTITY_TYPES, NODE_MOD_TYPES
 from manager_rest.storage import models, get_node
 from manager_rest.resource_manager import get_resource_manager
 

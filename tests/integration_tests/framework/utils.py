@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 #########
 # Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
 #
@@ -31,7 +32,7 @@ from contextlib import contextmanager
 import sh
 import pika
 
-import constants
+from . import constants
 
 from cloudify.utils import setup_logger
 from cloudify_rest_client import CloudifyClient

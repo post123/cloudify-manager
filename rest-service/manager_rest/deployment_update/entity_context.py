@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 
-import utils
+from . import utils
 
-from constants import ENTITY_TYPES
+from .constants import ENTITY_TYPES
 from manager_rest.storage import get_storage_manager, models, get_node
 
 
