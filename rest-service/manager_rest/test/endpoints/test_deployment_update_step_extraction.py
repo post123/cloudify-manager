@@ -1,3 +1,4 @@
+from __future__ import print_function
 import copy
 import json
 
@@ -2466,9 +2467,9 @@ class StepExtractorTestCase(unittest.TestCase):
 
         for step in steps:
             if step not in expected_steps.values():
-                print 'in actual: {}'.format(step)
+                print('in actual: {}'.format(step))
         for step in expected_steps.values():
             if step not in steps:
-                print 'in expected: {}'.format(step)
+                print('in expected: {}'.format(step))
 
         self.assertEquals(set(expected_steps.values()), set(steps))
