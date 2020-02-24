@@ -183,7 +183,7 @@ class DeploymentsTestCase(base_test.BaseServerTestCase):
             self.client.executions.start(deployment_id,
                                          'nonexisting-workflow-id')
             self.fail()
-        except CloudifyClientError, e:
+        except CloudifyClientError as e:
             self.assertEqual(400, e.status_code)
             error = manager_exceptions.NonexistentWorkflowError
             self.assertEquals(error.NONEXISTENT_WORKFLOW_ERROR_CODE,
@@ -537,7 +537,7 @@ class DeploymentsTestCase(base_test.BaseServerTestCase):
                 deployment_id=id_)
             raise exceptions.AssertionError(
                 "Expected DeploymentPluginNotFound error")
-        except DeploymentPluginNotFound, e:
+        except DeploymentPluginNotFound as e:
             self.assertEqual(400, e.status_code)
             self.assertEqual(manager_exceptions.DeploymentPluginNotFound.
                              ERROR_CODE,
@@ -556,7 +556,7 @@ class DeploymentsTestCase(base_test.BaseServerTestCase):
                 deployment_id=id_)
             raise exceptions.AssertionError(
                 "Expected DeploymentPluginNotFound error")
-        except DeploymentPluginNotFound, e:
+        except DeploymentPluginNotFound as e:
             self.assertEqual(400, e.status_code)
             self.assertEqual(manager_exceptions.DeploymentPluginNotFound.
                              ERROR_CODE,
@@ -604,7 +604,7 @@ class DeploymentsTestCase(base_test.BaseServerTestCase):
                 deployment_id=id_,
                 skip_plugins_validation='invalid_arg')
             raise exceptions.AssertionError("Expected CloudifyClientError")
-        except CloudifyClientError, e:
+        except CloudifyClientError as e:
             self.assertEqual(400, e.status_code)
             self.assertEqual(manager_exceptions.BadParametersError.
                              BAD_PARAMETERS_ERROR_CODE,
