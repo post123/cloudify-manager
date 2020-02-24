@@ -267,7 +267,7 @@ class Events(SecuredResource):
             total = query.count()
             query = Events._apply_sort(query, sort)
             if sort:
-                sort_direction = sort.itervalues().next()
+                sort_direction = next(sort.itervalues())
             else:
                 sort_direction = 'asc'
             query = Events._apply_sort(query, {'_storage_id': sort_direction})
