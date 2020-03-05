@@ -39,8 +39,10 @@ from dsl_parser import exceptions as parser_exceptions
 from manager_rest import premium_enabled
 from manager_rest.constants import (DEFAULT_TENANT_NAME,
                                     FILE_SERVER_BLUEPRINTS_FOLDER,
-                                    FILE_SERVER_UPLOADED_BLUEPRINTS_FOLDER)
+                                    FILE_SERVER_UPLOADED_BLUEPRINTS_FOLDER,
+                                    MAINTENANCE_MODE_ACTIVATED)
 from manager_rest.dsl_functions import get_secret_method
+from manager_rest.maintenance import get_maintenance_file_path
 from manager_rest.utils import (send_event,
                                 is_create_global_permitted,
                                 validate_global_modification,
@@ -210,6 +212,13 @@ class ResourceManager(object):
 
         return execution
 
+    def _is_maintenance_mode_activated(self):
+        maintenance_file_path = get_maintenance_file_path()
+        if os.path.isfile(maintenance_file_path):
+            state = utils.read_json_file(maintenance_file_path)
+            return state['status'] == MAINTENANCE_MODE_ACTIVATED
+        return False
+
     def restore_snapshot(self,
                          snapshot_id,
                          recreate_deployments_envs,
@@ -219,6 +228,13 @@ class ResourceManager(object):
                          restore_certificates,
                          no_reboot,
                          ignore_plugin_failure):
+        # Throws error if not running in maintenance mode
+        if not self._is_maintenance_mode_activated():
+            raise manager_exceptions.SnapshotActionError(
+                'Snapshot can be restored only when maintenance mode '
+                'is activated'
+            )
+
         # Throws error if no snapshot found
         snapshot = self.sm.get(models.Snapshot, snapshot_id)
         if snapshot.status == SnapshotState.FAILED:
