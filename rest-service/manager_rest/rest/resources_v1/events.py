@@ -262,10 +262,24 @@ class Events(SecuredResource):
             subqueries.append(logs_query)
 
         if subqueries:
-            query = reduce(
+            events_n_logs = reduce(
                 lambda left, right: left.union_all(right),
                 subqueries,
             )
+            # does not work either: events_query = union_all(*subqueries)
+            query = events_n_logs.filter(
+                sql_or(
+                    events_n_logs._tenant_id == tenant_id,
+                    events_n_logs.visibility == VisibilityState.GLOBAL
+                )
+            # ).outerjoin(NodeInstance,
+            #             NodeInstance.id == events_n_logs.node_id).outerjoin(
+            #     Node, Node._storage_id == NodeInstance._node_fk).outerjoin(
+            #     Execution,
+            #     Execution._storage_id == events_n_logs._execution_fk).outerjoin(
+            #     Deployment,
+            #     Deployment._storage_id == Execution._deployment_fk).outerjoin(
+            #     Blueprint, Blueprint._storage_id == Deployment._blueprint_fk)
             total = query.count()
             query = Events._apply_sort(query, sort)
             if sort:
@@ -329,10 +343,10 @@ class Events(SecuredResource):
                 select_column('_storage_id'),
                 select_column('timestamp'),
                 select_column('reported_timestamp'),
-                Blueprint.id.label('blueprint_id'),
-                Deployment.id.label('deployment_id'),
-                Execution.id.label('execution_id'),
-                Execution.workflow_id.label('workflow_id'),
+                # Blueprint.id.label('blueprint_id'),
+                # Deployment.id.label('deployment_id'),
+                # Execution.id.label('execution_id'),
+                # Execution.workflow_id.label('workflow_id'),
                 select_column('message'),
                 select_column('message_code'),
                 select_column('error_causes'),
@@ -341,26 +355,28 @@ class Events(SecuredResource):
                 select_column('node_id'),
                 select_column('source_id'),
                 select_column('target_id'),
-                NodeInstance.id.label('node_instance_id'),
-                Node.id.label('node_name'),
+                # NodeInstance.id.label('node_instance_id'),
+                # Node.id.label('node_name'),
                 select_column('logger'),
                 select_column('level'),
                 literal_column("'cloudify_{}'".format(model.__name__.lower()))
-                .label('type'),
+                    .label('type'),
+                select_column('_tenant_id'),
+                select_column('visibility'),
             )
-            .filter(
-                sql_or(
-                    model._tenant_id == tenant_id,
-                    model.visibility == VisibilityState.GLOBAL
-                )
-            )
-            .outerjoin(NodeInstance, NodeInstance.id == model.node_id)
-            .outerjoin(Node, Node._storage_id == NodeInstance._node_fk)
-            .outerjoin(Execution, Execution._storage_id == model._execution_fk)
-            .outerjoin(Deployment,
-                       Deployment._storage_id == Execution._deployment_fk)
-            .outerjoin(
-                Blueprint, Blueprint._storage_id == Deployment._blueprint_fk)
+            # .filter(
+            #     sql_or(
+            #         model._tenant_id == tenant_id,
+            #         model.visibility == VisibilityState.GLOBAL
+            #     )
+            # )
+            # .outerjoin(NodeInstance, NodeInstance.id == model.node_id)
+            # .outerjoin(Node, Node._storage_id == NodeInstance._node_fk)
+            # .outerjoin(Execution, Execution._storage_id == model._execution_fk)
+            # .outerjoin(Deployment,
+            #            Deployment._storage_id == Execution._deployment_fk)
+            # .outerjoin(
+            #     Blueprint, Blueprint._storage_id == Deployment._blueprint_fk)
         )
 
         query = Events._apply_filters(query, model, filters)
