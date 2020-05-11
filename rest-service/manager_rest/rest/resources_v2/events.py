@@ -16,6 +16,11 @@
 
 from flask_restful_swagger import swagger
 from sqlalchemy import bindparam
+from datetime import datetime
+import os
+import subprocess
+
+from cloudify import logs
 
 from manager_rest import manager_exceptions
 from manager_rest.rest import (
@@ -34,7 +39,6 @@ from manager_rest.security.authorization import authorize
 
 
 class Events(resources_v1.Events):
-
     """Events resource.
 
     Through the events endpoint a user can retrieve both events and logs as
@@ -155,22 +159,42 @@ class Events(resources_v1.Events):
             'deployment_id': filters['deployment_id'][0],
             'tenant_id': self.current_tenant.id
         }
+        do_store_before = 'store_before' in filters and \
+                          filters['store_before'][0].upper() == 'TRUE'
 
         delete_event_query = Events._apply_range_filters(
             Events._build_delete_subquery(
                 Event, executions_query, params),
             Event, range_filters)
-        total = delete_event_query.delete(synchronize_session=False)
+        if do_store_before:
+            self._store_log_entries('events', filters['deployment_id'][0],
+                                    delete_event_query)
+        # execution_fk = delete_event_query.first()._execution_fk
+        deleted_entry_records = delete_event_query.delete(
+            synchronize_session=False)
+        # self._log_deletion(Event, filters['deployment_id'][0],
+        #                    execution_fk, self.current_tenant.name,
+        #                    deleted_entry_records)
 
+        deleted_log_records = 0
         if 'cloudify_log' in filters['type']:
             delete_log_query = Events._apply_range_filters(
                 Events._build_delete_subquery(
                     Log, executions_query, params),
                 Log, range_filters)
-            total += delete_log_query.delete('fetch')
+            if do_store_before:
+                self._store_log_entries('logs', filters['deployment_id'][0],
+                                        delete_log_query)
+            # execution_fk = delete_log_query.first()._execution_fk
+            deleted_log_records = delete_log_query.delete('fetch')
+            # self._log_deletion(Log, filters['deployment_id'][0],
+            #                    execution_fk, self.current_tenant.name,
+            #                    deleted_log_records)
 
         metadata = {
-            'pagination': dict(pagination, total=total)
+            'pagination':
+                dict(pagination,
+                     total=deleted_entry_records + deleted_log_records)
         }
 
         # Commit bulk row deletions to database
@@ -178,7 +202,47 @@ class Events(resources_v1.Events):
 
         # We don't really want to return all of the deleted events,
         # so it's a bit of a hack to return the deleted element count.
-        return ListResult([total], metadata)
+        return ListResult([deleted_entry_records + deleted_log_records],
+                          metadata)
+
+    def _log_deletion(self, model, deployment_id, execution_fk,
+                      deleted_records):
+        if model is Event:
+            message_type = 'cloudify_event'
+        elif model is Log:
+            message_type = 'cloudify_log'
+        else:
+            raise manager_exceptions.ConflictError()
+        logentry = model()
+        logentry._execution_fk = execution_fk
+        logentry.message = u"Deleted {0} entries for deployment id {1}".format(
+            deleted_records,
+            deployment_id)
+        logentry.operation = 'Logs deletion'
+        db.session.add(logentry)
+        return logentry
+
+    def _store_log_entries(self, table_name, deployment_id, select_query):
+        output_directory = Events._create_logs_output_directory()
+        output_filename = "{0}_{1}_{2}.log".format(
+            table_name, deployment_id,
+            datetime.utcnow().strftime('%Y%m%dT%H%M%S')
+        )
+        output_filename = os.path.join(output_directory, output_filename)
+        with open(output_filename, 'a') as output_file:
+            results = [
+                self._map_event_to_dict(None, event)
+                for event in select_query.all()
+            ]
+            for event in results:
+                output_file.write(logs.create_event_message_prefix(event))
+
+    @staticmethod
+    def _create_logs_output_directory():
+        output_directory = os.path.join(os.sep, 'opt', 'manager', 'logs')
+        cmd = 'mkdir {0}'.format(output_directory)
+        subprocess.Popen(cmd, shell=True)
+        return output_directory
 
     @staticmethod
     def _build_delete_subquery(model, execution_query, params):
