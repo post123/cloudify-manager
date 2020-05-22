@@ -1,5 +1,6 @@
 %define _manager_env /opt/manager/env
 %define __python %_manager_env/bin/python
+%global _python_bytecompile_extra 0
 
 %define dbus_glib_version 0.100
 %define dbus_version 1.6
