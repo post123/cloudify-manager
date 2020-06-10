@@ -8,6 +8,7 @@ pipeline {
     stages {
         stage('Fetch the docker image'){
             copyArtifacts(
+                projectName: '_temp_build_docker',
                 selector: params.IMAGE_BUILD_NUMBER ? specific(params.IMAGE_BUILD_NUMBER) : lastSuccessful()
             )
         }
