@@ -1,0 +1,24 @@
+pipeline {
+    agent {
+        node 'docker'
+    }
+    parameters {
+        string(name: 'IMAGE_BUILD_NUMBER')
+    }
+    stages {
+        stage('Fetch the docker image'){
+            copyArtifacts(
+                selector: params.IMAGE_BUILD_NUMBER ? specific(params.IMAGE_BUILD_NUMBER) : lastSuccessful()
+            )
+        }
+        stage('load the docker image'){
+            sh 'docker load < cloudify*.tar'
+        }
+        stage('install the inte-tests package') {
+            sh 'virtualenv venv && venv/bin/pip install tests/'
+        }
+        stage('run tests'){
+            sh 'pytest tests/ --collect-only'
+        }
+    }
+}
