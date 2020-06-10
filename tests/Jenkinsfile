@@ -21,5 +21,10 @@ pipeline {
         stage('run tests'){
             sh 'pytest tests/ --collect-only'
         }
+        post {
+            cleanup {
+                cleanWs()
+            }
+        }
     }
 }
