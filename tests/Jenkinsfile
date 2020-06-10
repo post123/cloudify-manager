@@ -7,19 +7,27 @@ pipeline {
     }
     stages {
         stage('Fetch the docker image'){
-            copyArtifacts(
-                projectName: '/dir_manager/build_docker_image_pipeline',
-                selector: params.IMAGE_BUILD_NUMBER ? specific(params.IMAGE_BUILD_NUMBER) : lastSuccessful()
-            )
+            steps {
+                copyArtifacts(
+                    projectName: '/dir_manager/build_docker_image_pipeline',
+                    selector: params.IMAGE_BUILD_NUMBER ? specific(params.IMAGE_BUILD_NUMBER) : lastSuccessful()
+                )
+            }
         }
         stage('load the docker image'){
-            sh 'docker load < cloudify*.tar'
+            steps {
+                sh 'docker load < cloudify*.tar'
+            }
         }
         stage('install the inte-tests package') {
-            sh 'virtualenv venv && venv/bin/pip install tests/'
+            steps {
+                sh 'virtualenv venv && venv/bin/pip install tests/'
+            }
         }
         stage('run tests'){
-            sh 'pytest tests/ --collect-only'
+            steps {
+                sh 'pytest tests/ --collect-only'
+            }
         }
         post {
             cleanup {
