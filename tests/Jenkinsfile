@@ -28,10 +28,10 @@ pipeline {
             steps {
                 sh 'pytest tests/ --collect-only'
             }
-        }
-        post {
-            cleanup {
-                cleanWs()
+            post {
+                cleanup {
+                    cleanWs()
+                }
             }
         }
     }
