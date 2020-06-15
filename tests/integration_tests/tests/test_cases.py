@@ -62,21 +62,15 @@ from cloudify_rest_client.executions import Execution
 from cloudify_rest_client.exceptions import CloudifyClientError
 
 
+import pytest
+
+@pytest.mark.usefixtures("test_environment")
 class BaseTestCase(unittest.TestCase):
     """
     A test case for cloudify integration tests.
     """
-
-    @classmethod
-    def setUpClass(cls):
-        env.create_env(cls.environment_type)
-        BaseTestCase.env = env.instance
-
-    @classmethod
-    def tearDownClass(cls):
-        env.destroy_env()
-
     def setUp(self):
+        import pudb;pu.db
         self.workdir = tempfile.mkdtemp(
             dir=self.env.test_working_dir,
             prefix='{0}-'.format(self._testMethodName))
@@ -620,11 +614,6 @@ class BaseTestCase(unittest.TestCase):
 class AgentlessTestCase(BaseTestCase):
     environment_type = env.AgentlessTestEnvironment
 
-    @classmethod
-    def setUpClass(cls):
-        super(AgentlessTestCase, cls).setUpClass()
-        prepare_reset_storage_script()
-
     def setUp(self):
         super(AgentlessTestCase, self).setUp()
         self._setup_running_manager_attributes()
@@ -662,10 +651,6 @@ class AgentlessTestCase(BaseTestCase):
 
 class BaseAgentTestCase(BaseTestCase):
     environment_type = env.AgentTestEnvironment
-
-    @classmethod
-    def setUpClass(cls):
-        super(BaseAgentTestCase, cls).setUpClass()
 
     def tearDown(self):
         self.logger.info('Removing leftover test containers')

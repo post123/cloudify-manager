@@ -47,8 +47,9 @@ instance = None
 class BaseTestEnvironment(object):
     # See _build_resource_mapping
     mock_cloudify_agent = None
+    container_id = None
 
-    def __init__(self, test_working_dir, env_id):
+    def __init__(self, test_working_dir, env_id, image_name):
         sh.ErrorReturnCode.truncate_cap = 1024 * 1024
         self.test_working_dir = test_working_dir
         self.env_id = env_id
@@ -61,12 +62,13 @@ class BaseTestEnvironment(object):
         # github. For example, the hello world repo or the plugin template.
         self.core_branch_name = os.environ.get(constants.BRANCH_NAME_CORE,
                                                'master')
+        self.image_name = image_name
 
     def start_events_printer(self):
         self.amqp_events_printer_thread = EventsPrinter()
         self.amqp_events_printer_thread.start()
 
-    def create_environment(self):
+    def create_environment(self, image_name):
         logger.info('Setting up test environment... workdir=[{0}]'
                     .format(self.test_working_dir))
         utils.set_cfy_paths(self.test_working_dir)
@@ -77,7 +79,7 @@ class BaseTestEnvironment(object):
                 kwargs['enable_colors'] = True
             cfy = utils.get_cfy()
             cfy.init(**kwargs)
-            docl.init(resources=self.build_resource_mapping())
+            # docl.init(resources=self.build_resource_mapping())
             self.on_environment_created()
         except BaseException as e:
             logger.error(e)
@@ -94,7 +96,7 @@ class BaseTestEnvironment(object):
 
     def run_manager(self, tag=None, label=None):
         logger.info('Starting manager container')
-        docl.run_manager(label=([self.env_label] + list(label or [])), tag=tag)
+        self.container_id = docl.run_manager(self.image_name)
         self.on_manager_created()
 
     def on_manager_created(self):
@@ -160,7 +162,9 @@ class BaseTestEnvironment(object):
     def destroy(self):
         logger.info('Destroying test environment...')
         os.environ.pop('CFY_WORKDIR', None)
-        docl.clean(label=[self.env_label])
+        if self.container_id:
+            docl.clean(self.container_id)
+            self.container_id = None
         self.delete_working_directory()
 
     def delete_working_directory(self):
@@ -222,7 +226,7 @@ class AgentTestEnvironment(BaseTestEnvironment):
         self.chown(constants.CLOUDIFY_USER, constants.DOCKER_COMPUTE_DIR)
 
 
-def create_env(env_cls):
+def create_env(env_cls, *env_args, **env_kwargs):
     logger.info('Creating testing env..')
     global instance
     top_level_dir = os.path.join(tempfile.gettempdir(),
@@ -231,8 +235,9 @@ def create_env(env_cls):
     env_name = 'WorkflowsTests-{0}'.format(env_id)
     test_working_dir = os.path.join(top_level_dir, env_name)
     os.makedirs(test_working_dir)
-    instance = env_cls(test_working_dir, env_id)
+    instance = env_cls(test_working_dir, env_id, *env_args, **env_kwargs)
     instance.create_environment()
+    return instance
 
 
 def destroy_env():

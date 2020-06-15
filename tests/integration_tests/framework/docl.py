@@ -22,6 +22,7 @@ import yaml
 import time
 import socket
 import tempfile
+import subprocess
 
 from functools import partial
 
@@ -142,34 +143,24 @@ def init(expose=None, resources=None):
     _save_docl_config(conf)
 
 
-def run_manager(label=None, tag=None):
-    start = time.time()
-    label = label or []
-    args = ['--mount']
-    if tag:
-        args += ['--tag', tag]
-    for label_item in label:
-        args += ['--label', label_item]
-    with tempfile.NamedTemporaryFile() as f:
-        args += ['--details-path', f.name]
-        _docl.run(*args)
-        with open(f.name) as f2:
-            container_details = yaml.safe_load(f2)
-    _set_container_id_and_ip(container_details)
-    utils.update_profile_context()
-    upload_mock_license()
-    _wait_for_services()
-    logger.info(
-        'Container start took {0} seconds'.format(time.time() - start))
-    logger.info(
-        'Container details: {0}'.format(container_details)
+def run_manager(image):
+    manager_id = subprocess.check_output([
+        'docker', 'run', '--privileged', '-d',
+        '-v', '/sys/fs/cgroup:/sys/fs/cgroup:ro',
+        '--tmpfs', '/run', '--tmpfs', '/run/lock',
+        image
+    ])
+    _wait_for_services(manager_id)
+    upload_mock_license(manager_id)
+    return manager_id
+
+
+def upload_mock_license(manager_id):
+    execute(
+        manager_id,
+        'sudo -u postgres psql cloudify_db -c "{0}"'
+        .format(INSERT_MOCK_LICENSE_QUERY)
     )
-    return container_details
-
-
-def upload_mock_license():
-    execute(('sudo -u postgres psql cloudify_db '
-             '-c "{0}"'.format(INSERT_MOCK_LICENSE_QUERY)))
 
 
 def clean(label=None):
@@ -189,10 +180,10 @@ def read_file(file_path, no_strip=False, container_id=None):
     return result
 
 
-def execute(command, quiet=True, container_id=None):
-    container_id = container_id or default_container_id
-    proc = _quiet_docl if quiet else _docl
-    return proc('exec', command, container_id=container_id)
+def execute(container_id, command):
+    return subprocess.check_output([
+        'docker', 'exec', container_id, command
+    ])
 
 
 def copy_file_to_manager(source, target, container_id=None):
@@ -239,9 +230,16 @@ def _retry(func, exceptions, cleanup=None):
         raise RuntimeError()
 
 
-def _wait_for_services(container_ip=None):
-    if container_ip is None:
-        container_ip = utils.get_manager_ip()
+def get_manager_ip(container_id):
+    return subprocess.check_output([
+        'docker', 'inspect',
+        '--format={{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
+        container_id
+    ])
+
+
+def _wait_for_services(container_id):
+    container_ip = utils.get_manager_ip(container_id)
     logger.info('Waiting for RabbitMQ')
     _retry(func=utils.create_pika_connection,
            exceptions=AMQPConnectionError,
