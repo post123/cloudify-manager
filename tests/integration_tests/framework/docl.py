@@ -214,16 +214,17 @@ def _set_container_id_and_ip(container_details):
 
 
 def _retry(func, exceptions, cleanup=None):
-    for _ in range(1800):
+    err = None
+    for _ in range(600):
         try:
             res = func()
             if cleanup:
                 cleanup(res)
-            break
-        except exceptions:
+            return
+        except exceptions as e:
+            err = e
             time.sleep(0.1)
-    else:
-        raise RuntimeError()
+    raise err
 
 
 def get_manager_ip(container_id):
@@ -242,7 +243,7 @@ def _wait_for_services(container_id):
            cleanup=lambda conn: conn.close())
     logger.info('Waiting for REST service and Storage')
     rest_client = utils.create_rest_client(container_ip)
-    _retry(func=rest_client.blueprints.list,
+    _retry(func=rest_client.manager.status,
            exceptions=(requests.exceptions.ConnectionError,
                        cloudify_rest_client.exceptions.CloudifyClientError))
     logger.info('Waiting for postgres')
