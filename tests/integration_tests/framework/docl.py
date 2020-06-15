@@ -215,7 +215,7 @@ def _set_container_id_and_ip(container_details):
 
 def _retry(func, exceptions, cleanup=None):
     err = None
-    for _ in range(1800):
+    for _ in range(2600):
         try:
             res = func()
             if cleanup:
