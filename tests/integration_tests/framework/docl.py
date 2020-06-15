@@ -235,7 +235,7 @@ def get_manager_ip(container_id):
         'docker', 'inspect',
         '--format={{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
         container_id
-    ])
+    ]).strip()
 
 
 def _wait_for_services(container_id):
