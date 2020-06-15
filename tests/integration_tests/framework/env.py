@@ -68,7 +68,7 @@ class BaseTestEnvironment(object):
         self.amqp_events_printer_thread = EventsPrinter()
         self.amqp_events_printer_thread.start()
 
-    def create_environment(self, image_name):
+    def create_environment(self):
         logger.info('Setting up test environment... workdir=[{0}]'
                     .format(self.test_working_dir))
         utils.set_cfy_paths(self.test_working_dir)
