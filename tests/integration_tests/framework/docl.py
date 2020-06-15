@@ -163,12 +163,8 @@ def upload_mock_license(manager_id):
     )
 
 
-def clean(label=None):
-    label = label or []
-    args = []
-    for label_item in label:
-        args += ['--label', label_item]
-    _docl.clean(*args)
+def clean(container_id):
+    subprocess.check_call(['docker', 'rm', '-f', container_id])
 
 
 def read_file(file_path, no_strip=False, container_id=None):
