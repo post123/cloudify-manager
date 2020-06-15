@@ -235,6 +235,7 @@ def get_manager_ip(container_id):
 
 
 def _wait_for_services(container_id):
+    import pudb; pu.db
     container_ip = get_manager_ip(container_id)
     logger.info('Waiting for RabbitMQ')
     _retry(func=lambda: utils.create_pika_connection(container_ip),
