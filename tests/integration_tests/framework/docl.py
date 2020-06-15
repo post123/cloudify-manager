@@ -243,7 +243,7 @@ def _wait_for_services(container_id):
            cleanup=lambda conn: conn.close())
     logger.info('Waiting for REST service and Storage')
     rest_client = utils.create_rest_client(container_ip)
-    _retry(func=rest_client.manager.status,
+    _retry(func=rest_client.manager.get_status,
            exceptions=(requests.exceptions.ConnectionError,
                        cloudify_rest_client.exceptions.CloudifyClientError))
     logger.info('Waiting for postgres')
