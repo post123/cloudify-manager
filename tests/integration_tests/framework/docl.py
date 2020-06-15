@@ -149,7 +149,7 @@ def run_manager(image):
         '-v', '/sys/fs/cgroup:/sys/fs/cgroup:ro',
         '--tmpfs', '/run', '--tmpfs', '/run/lock',
         image
-    ])
+    ]).strip()
     _wait_for_services(manager_id)
     upload_mock_license(manager_id)
     return manager_id
