@@ -235,14 +235,13 @@ def get_manager_ip(container_id):
 
 
 def _wait_for_services(container_id):
-    import pudb; pu.db
     container_ip = get_manager_ip(container_id)
     logger.info('Waiting for RabbitMQ')
     _retry(func=lambda: utils.create_pika_connection(container_ip),
            exceptions=AMQPConnectionError,
            cleanup=lambda conn: conn.close())
     logger.info('Waiting for REST service and Storage')
-    rest_client = utils.create_rest_client()
+    rest_client = utils.create_rest_client(container_ip)
     _retry(func=rest_client.blueprints.list,
            exceptions=(requests.exceptions.ConnectionError,
                        cloudify_rest_client.exceptions.CloudifyClientError))

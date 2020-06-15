@@ -90,7 +90,7 @@ def set_cfy_paths(new_workdir):
     )
 
 
-def create_rest_client(**kwargs):
+def create_rest_client(host, **kwargs):
     # Doing it with kwargs instead of arguments with default values to allow
     # not passing args (which will then use the default values), or explicitly
     # passing None (or False) which will then be passed as-is to the Client
@@ -109,7 +109,7 @@ def create_rest_client(**kwargs):
     headers = create_auth_header(username, password, token, tenant)
 
     return CloudifyClient(
-        host=get_manager_ip(),
+        host=host,
         port=rest_port,
         protocol=rest_protocol,
         headers=headers,
