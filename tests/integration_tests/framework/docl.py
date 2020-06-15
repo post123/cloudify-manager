@@ -241,7 +241,7 @@ def get_manager_ip(container_id):
 def _wait_for_services(container_id):
     container_ip = get_manager_ip(container_id)
     logger.info('Waiting for RabbitMQ')
-    _retry(func=utils.create_pika_connection,
+    _retry(func=lambda: utils.create_pika_connection(container_ip),
            exceptions=AMQPConnectionError,
            cleanup=lambda conn: conn.close())
     logger.info('Waiting for REST service and Storage')

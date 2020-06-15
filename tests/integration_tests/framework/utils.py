@@ -117,12 +117,12 @@ def create_rest_client(**kwargs):
         cert=cert_path)
 
 
-def create_pika_connection():
+def create_pika_connection(host):
     credentials = pika.credentials.PlainCredentials(
         username='cloudify',
         password='c10udify')
     return pika.BlockingConnection(
-        pika.ConnectionParameters(host=get_manager_ip(),
+        pika.ConnectionParameters(host=host,
                                   port=5671,
                                   ssl=True,
                                   credentials=credentials))
