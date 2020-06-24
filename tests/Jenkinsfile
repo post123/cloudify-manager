@@ -19,10 +19,6 @@ pipeline {
                     projectName: '/dir_manager/build_docker_image_pipeline',
                     selector: params.IMAGE_BUILD_NUMBER ? specific(params.IMAGE_BUILD_NUMBER) : lastSuccessful()
                 )
-            }
-        }
-        stage('load the docker image'){
-            steps {
                 sh '''
                     docker load -i cloudify*.tar
                 '''
