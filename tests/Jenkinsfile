@@ -4,10 +4,17 @@ pipeline {
     }
     parameters {
         string(name: 'IMAGE_BUILD_NUMBER')
+        boolean(name: FETCH_IMAGE, defaultValue: false)
     }
     stages {
         stage('Fetch the docker image'){
+            when {
+                expression { return params.FETCH_IMAGE }
+            }
             steps {
+                sh '''
+                    docker rmi -f cloudify-manager-aio:latest
+                '''
                 copyArtifacts(
                     projectName: '/dir_manager/build_docker_image_pipeline',
                     selector: params.IMAGE_BUILD_NUMBER ? specific(params.IMAGE_BUILD_NUMBER) : lastSuccessful()
@@ -47,9 +54,7 @@ pipeline {
                     junit 'test-results.xml'
                 }
                 cleanup {
-                    sh '''
-                        docker rmi -f cloudify-manager-aio:latest
-                    '''
+
                     cleanWs()
                 }
             }
