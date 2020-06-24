@@ -456,7 +456,7 @@ class BasicWorkflowsTest(AgentlessTestCase):
             '/opt/mgmtworker/env/plugins/',
             DEFAULT_TENANT_NAME,
             '{0}-plugin1'.format(deployment.id),
-            'lib/python2.7/site-packages/',
+            'lib/python3.6/site-packages/',
             'mock_plugin/ops.py'
         )
 
