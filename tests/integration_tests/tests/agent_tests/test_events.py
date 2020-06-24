@@ -41,6 +41,7 @@ class TimezoneTest(AgentTestWithPlugins):
         # but timezone configuration is preserved.
         postgres_conf = get_postgres_conf()
         run_query(
+            cls.env.container_id,
             "ALTER USER {} SET TIME ZONE '{}'"
             .format(postgres_conf.username, cls.TIMEZONE)
         )
