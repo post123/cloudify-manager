@@ -20,9 +20,9 @@ import uuid
 import shutil
 import tarfile
 import tempfile
+import subprocess
 from contextlib import contextmanager
 
-import sh
 import retrying
 
 from cloudify import constants
@@ -461,7 +461,7 @@ class BasicWorkflowsTest(AgentlessTestCase):
         )
 
     def _assert_path_doesnt_exist_on_manager(self, path, directory=False):
-        self.assertRaises(sh.ErrorReturnCode,
+        self.assertRaises(subprocess.CalledProcessError,
                           self._assert_path_exists_on_manager,
                           path, directory)
 

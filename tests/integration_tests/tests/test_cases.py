@@ -423,7 +423,7 @@ class BaseTestCase(unittest.TestCase):
             raise RuntimeError(
                 'Workflow execution failed: {0}'.format(execution.error))
         if is_delete_deployment:
-            self.delete_deployment(deployment_id, validate=True)
+            self.delete_deployment(deployment_id, validate=True, client=client)
         return execution.id
 
     def get_manager_ip(self):
