@@ -31,11 +31,7 @@ from cloudify_rest_client.executions import Execution
 
 from integration_tests import AgentlessTestCase
 from integration_tests.framework.utils import timeout, create_zip
-from integration_tests.tests.utils import (
-    get_resource,
-    do_retries,
-    verify_deployment_env_created
-)
+from integration_tests.tests.utils import get_resource
 
 from manager_rest.constants import DEFAULT_TENANT_NAME
 
@@ -259,9 +255,7 @@ class BasicWorkflowsTest(AgentlessTestCase):
         self.client.blueprints.upload(dsl_path, blueprint_id)
         self.client.deployments.create(blueprint_id, deployment_id,
                                        skip_plugins_validation=True)
-        do_retries(verify_deployment_env_created,
-                   timeout_seconds=60,
-                   deployment_id=deployment_id)
+        self.wait_for_deployment_environment(deployment_id)
 
         self.delete_deployment(deployment_id,
                                ignore_live_nodes=False,
