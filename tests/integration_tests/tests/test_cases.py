@@ -594,6 +594,7 @@ class BaseTestCase(unittest.TestCase):
             verify_deployment_env_created,
             container_id=self.env.container_id,
             deployment_id=deployment_id,
+            client=self.client,
             timeout_seconds=60
         )
 
