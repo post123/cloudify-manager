@@ -35,10 +35,13 @@ pipeline {
         }
         stage('run tests'){
             steps {
-                sh 'pytest tests/ --collect-only'
+                sh 'venv/bin/pytest tests/ --collect-only'
             }
             post {
                 cleanup {
+                    sh '''
+                        docker rmi -f cloudify-manager-aio:latest
+                    '''
                     cleanWs()
                 }
             }
