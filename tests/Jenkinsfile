@@ -25,7 +25,7 @@ pipeline {
             steps {
                 sh '''
                     virtualenv venv
-                    venv/bin/pip install https://github.com/cloudify-cosmo/cloudify-common/archive/master.zip
+                    venv/bin/pip install 'https://github.com/cloudify-cosmo/cloudify-common/archive/master.zip#egg=cloudify-common[dispatcher]'
                     venv/bin/pip install https://github.com/cloudify-cosmo/cloudify-cli/archive/master.zip
                     venv/bin/pip install rest-service/
                     venv/bin/pip install tests/
