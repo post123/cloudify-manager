@@ -36,9 +36,16 @@ pipeline {
         }
         stage('run tests'){
             steps {
-                sh 'venv/bin/pytest tests/ --collect-only'
+                sh '''
+                    venv/bin/pytest \
+                        tests/integration_tests/tests/agentless_tests/test_workflow.py::BasicWorkflowsTest::test_execute_operation \
+                        --junitxml=test-results.xml
+                '''
             }
             post {
+                always {
+                    junit 'test-results.xml'
+                }
                 cleanup {
                     sh '''
                         docker rmi -f cloudify-manager-aio:latest
