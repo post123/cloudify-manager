@@ -16,8 +16,10 @@ pipeline {
         }
         stage('load the docker image'){
             steps {
-                sh 'ls'
-                sh 'docker load < cloudify*.tar'
+                sh '''
+                    ls
+                    docker load -i cloudify*.tar
+                '''
             }
         }
         stage('install the inte-tests package') {
