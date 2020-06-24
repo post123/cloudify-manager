@@ -17,7 +17,6 @@ pipeline {
         stage('load the docker image'){
             steps {
                 sh '''
-                    ls
                     docker load -i cloudify*.tar
                 '''
             }
