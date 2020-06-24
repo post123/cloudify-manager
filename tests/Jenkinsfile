@@ -36,6 +36,7 @@ pipeline {
         stage('run tests'){
             steps {
                 sh '''
+                    source venv/bin/activate
                     venv/bin/pytest \
                         tests/integration_tests/tests/agentless_tests/test_workflow.py::BasicWorkflowsTest::test_execute_operation \
                         --junitxml=test-results.xml
