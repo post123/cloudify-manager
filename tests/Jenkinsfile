@@ -5,6 +5,9 @@ pipeline {
     parameters {
         string(name: 'IMAGE_BUILD_NUMBER')
         booleanParam(name: 'FETCH_IMAGE', defaultValue: false)
+        text(name: 'PYTEST_ARGS', defaultValue: """-sv\\
+tests/integration_tests/tests/agentless_tests/test_workflow.py::BasicWorkflowsTest::test_execute_operation""")
+
     }
     stages {
         stage('Fetch the docker image'){
@@ -38,13 +41,13 @@ pipeline {
         }
         stage('run tests'){
             steps {
-                sh '''
+                sh """
                     export CI=no-color-logs
                     source venv/bin/activate
-                    venv/bin/pytest -svx \
-                        tests/integration_tests/tests/agentless_tests/test_workflow.py::BasicWorkflowsTest \
+                    venv/bin/pytest \
+                        ${params.PYTEST_ARGS} \
                         --junitxml=test-results.xml
-                '''
+                """
             }
             post {
                 always {
