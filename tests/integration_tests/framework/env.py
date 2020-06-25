@@ -13,7 +13,6 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-import json
 import logging
 import os
 import shutil
@@ -100,10 +99,12 @@ class BaseTestEnvironment(object):
         raise NotImplementedError
 
     def run_manager(self, tag=None, label=None):
-        logger.info('Starting manager container')
+        logger.info('Starting manager container %s', self.image_name)
         self.container_id = docker.run_manager(
             self.image_name, resource_mapping=self.build_resource_mapping())
         self.container_ip = docker.get_manager_ip(self.container_id)
+        logger.info('Started container: %s (%s)',
+                    self.container_id, self.container_ip)
         self.on_manager_created()
 
     def on_manager_created(self):

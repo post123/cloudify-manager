@@ -6,7 +6,7 @@ def pytest_addoption(parser):
     parser.addoption(
         '--image-name',
         help='Name of the Cloudify Manager AIO docker image',
-        default='cloudify-manager-aio'
+        default='cloudify-manager-aio:latest'
     )
     parser.addoption(
         '--keep-container',
