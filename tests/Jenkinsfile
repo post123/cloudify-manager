@@ -35,7 +35,6 @@ tests/integration_tests/tests/agentless_tests/test_workflow.py::BasicWorkflowsTe
                     venv/bin/pip install https://github.com/cloudify-cosmo/cloudify-cli/archive/master.zip
                     venv/bin/pip install rest-service/
                     venv/bin/pip install tests/
-                    venv/bin/pip install pytest
                 '''
             }
         }
