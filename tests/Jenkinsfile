@@ -6,8 +6,8 @@ pipeline {
         string(name: 'IMAGE_BUILD_NUMBER')
         booleanParam(name: 'FETCH_IMAGE', defaultValue: false)
         text(name: 'PYTEST_ARGS', defaultValue: """-sv \\
-tests/integration_tests/tests/agentless_tests/test_workflow.py::BasicWorkflowsTest::test_execute_operation""")
-
+tests/integration_tests/tests/agentless_tests/test_workflow.py \\
+tests/integration_tests/tests/agentless_tests/test_resume.py""")
     }
     stages {
         stage('Fetch the docker image'){
