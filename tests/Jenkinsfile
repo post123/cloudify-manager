@@ -42,7 +42,7 @@ pipeline {
                     export CI=no-color-logs
                     source venv/bin/activate
                     venv/bin/pytest -svx \
-                        tests/integration_tests/tests/agentless_tests/test_workflow.py::BasicWorkflowsTest::test_execute_operation \
+                        tests/integration_tests/tests/agentless_tests/test_workflow.py::BasicWorkflowsTest \
                         --junitxml=test-results.xml
                 '''
             }
