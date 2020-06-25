@@ -14,11 +14,38 @@
 #  * limitations under the License.
 #
 
+from flask_restful.reqparse import Argument
+
+from manager_rest.rest import resources_v2
 from manager_rest.security import SecuredResource
 from manager_rest.security.authorization import authorize
 from manager_rest.resource_manager import get_resource_manager
-from manager_rest.storage import (models,
-                                  get_storage_manager)
+from manager_rest.storage import (models,  get_storage_manager)
+from manager_rest.rest.rest_utils import get_args_and_verify_arguments
+
+
+class Executions(resources_v2.Executions):
+    # @authorize('execution_delete')
+    # TODO :: this should be added to authorization.conf at the very end.
+    def delete(self):
+        sm = get_storage_manager()
+        args = get_args_and_verify_arguments(
+            [Argument('keep_last', required=False),
+             Argument('keep_days', required=False)]
+        )
+        # TODO ::
+        #  filter by days, tenant, created_by, status
+        #  only delete executions with status in EndStates
+        #  make `keep_last` and `keep_days` mutually-exclusive
+
+        executions = sm.list(models.Execution, all_tenants=True)
+        if args['keep_last']:
+            executions = executions[:int(args['keep_last'])]
+
+        import pydevd
+        pydevd.settrace('192.168.9.43', port=53100, stdoutToServer=True,
+                        stderrToServer=True)
+        return 'Done.', 200
 
 
 class ExecutionsCheck(SecuredResource):
@@ -36,3 +63,4 @@ class ExecutionsCheck(SecuredResource):
         rm = get_resource_manager()
         return not (rm.check_for_executions(deployment_id, force=False,
                                             queue=True, execution=execution))
+
