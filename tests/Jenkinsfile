@@ -5,7 +5,7 @@ pipeline {
     parameters {
         string(name: 'IMAGE_BUILD_NUMBER')
         booleanParam(name: 'FETCH_IMAGE', defaultValue: false)
-        text(name: 'PYTEST_ARGS', defaultValue: """-sv\\
+        text(name: 'PYTEST_ARGS', defaultValue: """-sv \\
 tests/integration_tests/tests/agentless_tests/test_workflow.py::BasicWorkflowsTest::test_execute_operation""")
 
     }
