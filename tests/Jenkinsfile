@@ -39,6 +39,7 @@ pipeline {
         stage('run tests'){
             steps {
                 sh '''
+                    export CI=no-color-logs
                     source venv/bin/activate
                     venv/bin/pytest -svx \
                         tests/integration_tests/tests/agentless_tests/test_workflow.py::BasicWorkflowsTest::test_execute_operation \
