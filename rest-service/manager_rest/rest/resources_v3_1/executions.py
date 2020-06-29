@@ -13,39 +13,107 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 #
+from datetime import datetime, timedelta
 
 from flask_restful.reqparse import Argument
+from flask_restful.inputs import positive, date
 
-from manager_rest.rest import resources_v2
+from cloudify._compat import text_type
+from cloudify.models_states import ExecutionState
+
 from manager_rest.security import SecuredResource
 from manager_rest.security.authorization import authorize
+from manager_rest.rest import resources_v2, rest_decorators
 from manager_rest.resource_manager import get_resource_manager
-from manager_rest.storage import (models,  get_storage_manager)
 from manager_rest.rest.rest_utils import get_args_and_verify_arguments
+from manager_rest.storage import models,  get_storage_manager
 
 
 class Executions(resources_v2.Executions):
     # @authorize('execution_delete')
     # TODO :: this should be added to authorization.conf at the very end.
+    @rest_decorators.marshal_with(models.Execution)
     def delete(self):
         sm = get_storage_manager()
         args = get_args_and_verify_arguments(
-            [Argument('keep_last', required=False),
-             Argument('keep_days', required=False)]
+            [Argument('keep_last', type=positive, required=False),
+             Argument('keep_days', type=positive, required=False),
+             Argument('keep_since_date', type=date, required=False),
+             Argument('created_by', type=text_type, required=False),
+             Argument('tenant_name', type=text_type, required=False),
+             Argument('status', type=text_type, required=False)]
         )
-        # TODO ::
-        #  filter by days, tenant, created_by, status
-        #  only delete executions with status in EndStates
-        #  make `keep_last` and `keep_days` mutually-exclusive
 
-        executions = sm.list(models.Execution, all_tenants=True)
-        if args['keep_last']:
-            executions = executions[:int(args['keep_last'])]
+        filters = {}
+        if args['created_by']:
+            filters['created_by'] = args['created_by']
+        if args['tenant_name']:
+            filters['tenant_name'] = args['tenant_name']
+        if args['status']:
+            if args['status'] not in ExecutionState.END_STATES:
+                raise ValueError(
+                    'Can\'t filter by execution status `{0}`. '
+                    'Allowed statuses are: {1}'.format(
+                        args['status'], ExecutionState.END_STATES)
+                )
+            filters['status'] = args['status']
+        else:
+            filters['status'] = ExecutionState.END_STATES
 
-        import pydevd
-        pydevd.settrace('192.168.9.43', port=53100, stdoutToServer=True,
-                        stderrToServer=True)
-        return 'Done.', 200
+        executions = sm.list(models.Execution,
+                             filters=filters,
+                             all_tenants=True)
+        dep_creation_execs = {}
+        for execution in executions:
+            if execution.workflow_id == 'create_deployment_environment' and \
+                    execution.status == 'terminated':
+                dep_creation_execs[execution.deployment_id] = \
+                    dep_creation_execs.get(execution.deployment_id, 0) + 1
+
+        executions_to_delete = []
+
+        if args['keep_days']:
+            now_utc = datetime.utcnow()
+            requested_time = (datetime(*now_utc.timetuple()[:3])
+                              - timedelta(days=args['keep_days']-1))
+            for execution in executions:
+                creation_time = datetime.strptime(execution.created_at,
+                                                  '%Y-%m-%dT%H:%M:%S.%fZ')
+                if creation_time < requested_time and \
+                        self._can_delete_execution(execution,
+                                                   dep_creation_execs):
+                    executions_to_delete.append(execution)
+                    sm.delete(execution)
+        elif args['keep_since_date']:  # UNIX date format: YYYY-(m)m-(d)d
+            for execution in executions:
+                creation_time = datetime.strptime(execution.created_at,
+                                                  '%Y-%m-%dT%H:%M:%S.%fZ')
+                if creation_time < args['keep_since_date'] and \
+                        self._can_delete_execution(execution,
+                                                   dep_creation_execs):
+                    executions_to_delete.append(execution)
+                    sm.delete(execution)
+        elif args['keep_last']:
+            num_to_delete = len(executions) - args['keep_last']
+            for execution in executions:
+                if self._can_delete_execution(execution, dep_creation_execs):
+                    executions_to_delete.append(execution)
+                    sm.delete(execution)
+                    num_to_delete -= 1
+                if num_to_delete == 0:
+                    break
+
+        return executions_to_delete
+
+    @staticmethod
+    def _can_delete_execution(execution, dep_creation_execs):
+        if execution.workflow_id == \
+                'create_deployment_environment':
+            if dep_creation_execs[execution.deployment_id] <= 1:
+                return False
+            else:
+                dep_creation_execs[execution.deployment_id] -= 1
+        return True
 
 
 class ExecutionsCheck(SecuredResource):
