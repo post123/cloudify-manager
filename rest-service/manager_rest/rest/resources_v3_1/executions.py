@@ -15,8 +15,9 @@
 #
 from datetime import datetime, timedelta
 
+from flask import request
 from flask_restful.reqparse import Argument
-from flask_restful.inputs import positive, date
+from flask_restful.inputs import positive, date, boolean
 
 from cloudify._compat import text_type
 from cloudify.models_states import ExecutionState
@@ -26,29 +27,28 @@ from manager_rest.security.authorization import authorize
 from manager_rest.rest import resources_v2, rest_decorators
 from manager_rest.resource_manager import get_resource_manager
 from manager_rest.rest.rest_utils import get_args_and_verify_arguments
-from manager_rest.storage import models,  get_storage_manager
+from manager_rest.storage import models,  get_storage_manager, ListResult
 
 
 class Executions(resources_v2.Executions):
-    # @authorize('execution_delete')
-    # TODO :: this should be added to authorization.conf at the very end.
+    @authorize('execution_delete')
     @rest_decorators.marshal_with(models.Execution)
-    def delete(self):
+    @rest_decorators.paginate
+    def delete(self, pagination=None):
         sm = get_storage_manager()
         args = get_args_and_verify_arguments(
             [Argument('keep_last', type=positive, required=False),
              Argument('keep_days', type=positive, required=False),
-             Argument('keep_since_date', type=date, required=False),
+             Argument('keep_since', type=date, required=False),
              Argument('created_by', type=text_type, required=False),
-             Argument('tenant_name', type=text_type, required=False),
-             Argument('status', type=text_type, required=False)]
+             Argument('status', type=text_type, required=False),
+             Argument('all_tenants', type=boolean, default=False)]
         )
-
         filters = {}
         if args['created_by']:
             filters['created_by'] = args['created_by']
-        if args['tenant_name']:
-            filters['tenant_name'] = args['tenant_name']
+        if not args['all_tenants']:
+            filters['tenant_name'] = request.headers.get('Tenant')
         if args['status']:
             if args['status'] not in ExecutionState.END_STATES:
                 raise ValueError(
@@ -62,7 +62,7 @@ class Executions(resources_v2.Executions):
 
         executions = sm.list(models.Execution,
                              filters=filters,
-                             all_tenants=True)
+                             all_tenants=args['all_tenants'])
         dep_creation_execs = {}
         for execution in executions:
             if execution.workflow_id == 'create_deployment_environment' and \
@@ -84,11 +84,11 @@ class Executions(resources_v2.Executions):
                                                    dep_creation_execs):
                     executions_to_delete.append(execution)
                     sm.delete(execution)
-        elif args['keep_since_date']:  # UNIX date format: YYYY-(m)m-(d)d
+        elif args['keep_since']:  # UNIX date format: YYYY-(m)m-(d)d
             for execution in executions:
                 creation_time = datetime.strptime(execution.created_at,
                                                   '%Y-%m-%dT%H:%M:%S.%fZ')
-                if creation_time < args['keep_since_date'] and \
+                if creation_time < args['keep_since'] and \
                         self._can_delete_execution(execution,
                                                    dep_creation_execs):
                     executions_to_delete.append(execution)
@@ -102,8 +102,10 @@ class Executions(resources_v2.Executions):
                     num_to_delete -= 1
                 if num_to_delete == 0:
                     break
-
-        return executions_to_delete
+        else:
+            raise ValueError('Must specify one of the options keep_last | '
+                             'keep_days | keep_since_date')
+        return ListResult(executions_to_delete, {'pagination': pagination})
 
     @staticmethod
     def _can_delete_execution(execution, dep_creation_execs):
@@ -131,4 +133,3 @@ class ExecutionsCheck(SecuredResource):
         rm = get_resource_manager()
         return not (rm.check_for_executions(deployment_id, force=False,
                                             queue=True, execution=execution))
-
