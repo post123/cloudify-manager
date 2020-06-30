@@ -16,8 +16,8 @@
 from datetime import datetime, timedelta
 
 from flask import request
+from flask_restful.inputs import boolean
 from flask_restful.reqparse import Argument
-from flask_restful.inputs import positive, date, boolean
 
 from cloudify._compat import text_type
 from cloudify.models_states import ExecutionState
@@ -26,7 +26,8 @@ from manager_rest.security import SecuredResource
 from manager_rest.security.authorization import authorize
 from manager_rest.rest import resources_v2, rest_decorators
 from manager_rest.resource_manager import get_resource_manager
-from manager_rest.rest.rest_utils import get_args_and_verify_arguments
+from manager_rest.rest.rest_utils import (get_args_and_verify_arguments,
+                                          get_json_and_verify_params)
 from manager_rest.storage import models,  get_storage_manager, ListResult
 
 
@@ -35,12 +36,24 @@ class Executions(resources_v2.Executions):
     @rest_decorators.marshal_with(models.Execution)
     @rest_decorators.paginate
     def delete(self, pagination=None):
+        request_dict = get_json_and_verify_params({
+            'keep_last': {'optional': True, 'type': int},
+            'keep_days': {'optional': True, 'type': int},
+            'keep_since': {'optional': True}
+        })
+        keep_since = None
+        if 'keep_since' in request_dict:
+            # this will raise ValueError if `keep_since` is not in date format
+            keep_since = \
+                datetime.strptime(request_dict['keep_since'], "%Y-%m-%d")
+        if ('keep_last' in request_dict and request_dict['keep_last'] <= 0) or\
+                ('keep_days' in request_dict and
+                 request_dict['keep_days'] <= 0):
+            raise ValueError('Must specify an integer greater than 0')
+
         sm = get_storage_manager()
         args = get_args_and_verify_arguments(
-            [Argument('keep_last', type=positive, required=False),
-             Argument('keep_days', type=positive, required=False),
-             Argument('keep_since', type=date, required=False),
-             Argument('created_by', type=text_type, required=False),
+            [Argument('created_by', type=text_type, required=False),
              Argument('status', type=text_type, required=False),
              Argument('all_tenants', type=boolean, default=False)]
         )
@@ -72,10 +85,10 @@ class Executions(resources_v2.Executions):
 
         executions_to_delete = []
 
-        if args['keep_days']:
+        if request_dict.get('keep_days'):
             now_utc = datetime.utcnow()
             requested_time = (datetime(*now_utc.timetuple()[:3])
-                              - timedelta(days=args['keep_days']-1))
+                              - timedelta(days=request_dict['keep_days']-1))
             for execution in executions:
                 creation_time = datetime.strptime(execution.created_at,
                                                   '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -84,17 +97,17 @@ class Executions(resources_v2.Executions):
                                                    dep_creation_execs):
                     executions_to_delete.append(execution)
                     sm.delete(execution)
-        elif args['keep_since']:  # UNIX date format: YYYY-(m)m-(d)d
+        elif keep_since:  # UNIX date format: %Y-%m-%d
             for execution in executions:
                 creation_time = datetime.strptime(execution.created_at,
                                                   '%Y-%m-%dT%H:%M:%S.%fZ')
-                if creation_time < args['keep_since'] and \
+                if creation_time < keep_since and \
                         self._can_delete_execution(execution,
                                                    dep_creation_execs):
                     executions_to_delete.append(execution)
                     sm.delete(execution)
-        elif args['keep_last']:
-            num_to_delete = len(executions) - args['keep_last']
+        elif request_dict.get('keep_last'):
+            num_to_delete = len(executions) - request_dict['keep_last']
             for execution in executions:
                 if self._can_delete_execution(execution, dep_creation_execs):
                     executions_to_delete.append(execution)
